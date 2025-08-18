@@ -174,8 +174,8 @@
                 <div>
                     <label for="vertical" class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary mb-2">Business Vertical</label>
                     <select id="vertical" class="w-full p-3 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-lg shadow-sm focus:ring-primary dark:focus:ring-dark-primary form-input">
-                        <option>FV</option>
-                        <option>NFV</option>
+                        <option>FV (Fast-moving)</option>
+                        <option>NFV (Non-Fast-moving)</option>
                         <option>TMart</option>
                     </select>
                 </div>
@@ -221,11 +221,11 @@
         <button class="remove-rider-btn absolute -top-3 -right-3 w-7 h-7 flex items-center justify-center bg-red-500 text-white rounded-full font-bold text-lg hover:bg-red-600 transform hover:scale-110 transition-transform" onclick="this.parentElement.remove()" title="Remove Rider">&times;</button>
         <h3 class="font-bold font-heading text-lg mb-4 text-primary dark:text-dark-primary">Rider</h3>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Queued Time <input type="text" placeholder="0:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md queued"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Accepted Time <input type="text" placeholder="0:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md accepted"></label></div>
+            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Queued Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md queued"></label></div>
+            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Accepted Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md accepted"></label></div>
             <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Committed Pickup Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md committed"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Near Pickup Time <input type="text" placeholder="0:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md nearpickup"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Picked Up Time <input type="text" placeholder="0:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md pickedup"></label></div>
+            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Near Pickup Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md nearpickup"></label></div>
+            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Picked Up Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md pickedup"></label></div>
             <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Est. Dropoff Departure <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md dropoff"></label></div>
         </div>
     </div>
@@ -494,5 +494,3 @@
     </script>
 </body>
 </html>
-
-
