@@ -109,9 +109,9 @@
         .form-input {
             transition: all 0.2s ease-in-out;
         }
-        .form-input:focus {
-            box-shadow: 0 0 0 2px var(--tw-ring-color);
-            border-color: var(--tw-ring-color);
+        .form-input.invalid {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4) !important;
         }
         .btn-glow {
             position: relative;
@@ -220,13 +220,13 @@
     <div id="riderTemplate" class="hidden rider-card rider p-5 mb-4 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-xl relative animate-fadeInUp transition-all duration-300 hover:border-primary dark:hover:border-dark-primary hover:shadow-lg">
         <button class="remove-rider-btn absolute -top-3 -right-3 w-7 h-7 flex items-center justify-center bg-red-500 text-white rounded-full font-bold text-lg hover:bg-red-600 transform hover:scale-110 transition-transform" onclick="this.parentElement.remove()" title="Remove Rider">&times;</button>
         <h3 class="font-bold font-heading text-lg mb-4 text-primary dark:text-dark-primary">Rider</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Queued Time <input type="time" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md queued focus:ring-primary dark:focus:ring-dark-primary"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Accepted Time <input type="time" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md accepted focus:ring-primary dark:focus:ring-dark-primary"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Committed Pickup Time <input type="time" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md committed focus:ring-primary dark:focus:ring-dark-primary"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Near Pickup Time <input type="time" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md nearpickup focus:ring-primary dark:focus:ring-dark-primary"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Picked Up Time <input type="time" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md pickedup focus:ring-primary dark:focus:ring-dark-primary"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Est. Dropoff Departure <input type="time" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md dropoff focus:ring-primary dark:focus:ring-dark-primary"></label></div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Queued Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md queued"></label></div>
+            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Accepted Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md accepted"></label></div>
+            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Committed Pickup Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md committed"></label></div>
+            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Near Pickup Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md nearpickup"></label></div>
+            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Picked Up Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md pickedup"></label></div>
+            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Est. Dropoff Departure <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md dropoff"></label></div>
         </div>
     </div>
 
@@ -247,7 +247,6 @@
             const shapes = [];
 
             function createShapes() {
-                // Clear existing shapes
                 shapes.forEach(s => scene.remove(s));
                 shapes.length = 0;
 
@@ -310,7 +309,6 @@
                     lightIcon.classList.add('hidden');
                     darkIcon.classList.remove('hidden');
                 }
-                // Recreate shapes with new theme color
                 createShapes();
             };
 
@@ -330,7 +328,34 @@
             const calculateBtn = document.getElementById('calculateBtn');
             const ridersContainer = document.getElementById('ridersContainer');
             const riderTemplate = document.getElementById('riderTemplate');
+            const resultDiv = document.getElementById('result');
             
+            const timeRegex = /^(0[1-9]|1[0-2]):[0-5]\d\s(AM|PM)$/i;
+
+            function validateInputs() {
+                let isValid = true;
+                const inputs = ridersContainer.querySelectorAll('input[type="text"]');
+                inputs.forEach(input => {
+                    if (input.value && !timeRegex.test(input.value)) {
+                        input.classList.add('invalid');
+                        isValid = false;
+                    } else {
+                        input.classList.remove('invalid');
+                    }
+                });
+                return isValid;
+            }
+            
+            ridersContainer.addEventListener('input', (e) => {
+                if (e.target.tagName === 'INPUT' && e.target.type === 'text') {
+                    if (e.target.value && !timeRegex.test(e.target.value)) {
+                        e.target.classList.add('invalid');
+                    } else {
+                        e.target.classList.remove('invalid');
+                    }
+                }
+            });
+
             const addRider = () => {
                 const newRider = riderTemplate.cloneNode(true);
                 newRider.id = '';
@@ -344,6 +369,12 @@
             addRiderBtn.addEventListener('click', addRider);
 
             calculateBtn.addEventListener("click", () => {
+                resultDiv.innerHTML = '';
+                if (!validateInputs()) {
+                    resultDiv.innerHTML = `<div class="p-4 text-red-700 bg-red-100 border-l-4 border-red-500 rounded-r-lg"><p class="font-bold">Validation Error</p><p>Please correct the highlighted time fields. The format must be HH:MM AM/PM (e.g., 02:30 PM).</p></div>`;
+                    return;
+                }
+
                 const riders = document.querySelectorAll(".rider:not(#riderTemplate)");
                 let totalDispatchingTime = 0;
                 let delays = [];
@@ -429,18 +460,32 @@
                 if (delays.length > 0) {
                     resultHTML += `<p class="text-text-secondary dark:text-dark-text-secondary">Delays: <span class="font-bold text-text-primary dark:text-dark-text-primary">${delays.join(", ")} mins</span></p>`;
                 }
-                resultHTML += `<p class="font-heading font-extrabold mt-4 text-xl"><strong>Cancellation Reason:</strong> <span class="text-primary dark:text-dark-primary">${cancellationReason}</span></p></div></div>`;
+                resultHTML += `<p class="font-heading font-extrabold mt-4 text-xl"><strong class="text-red-500 dark:text-red-400">Cancellation Reason:</strong> <span class="text-primary dark:text-dark-primary">${cancellationReason}</span></p></div></div>`;
 
-                document.getElementById("result").innerHTML = resultHTML;
+                resultDiv.innerHTML = resultHTML;
             });
 
             function diffMinutes(start, end) {
                 if (!start || !end) return 0;
-                const [sh, sm] = start.split(":").map(Number);
-                const [eh, em] = end.split(":").map(Number);
-                const startTotalMinutes = sh * 60 + sm;
-                const endTotalMinutes = eh * 60 + em;
-                if (endTotalMinutes < startTotalMinutes) {
+
+                const parseTime12Hour = (timeStr) => {
+                    const upperTime = timeStr.toUpperCase();
+                    const [time, modifier] = upperTime.split(' ');
+                    let [hours, minutes] = time.split(':').map(Number);
+
+                    if (modifier === 'PM' && hours < 12) {
+                        hours += 12;
+                    }
+                    if (modifier === 'AM' && hours === 12) { // Midnight case (12:xx AM)
+                        hours = 0;
+                    }
+                    return hours * 60 + minutes;
+                };
+
+                const startTotalMinutes = parseTime12Hour(start);
+                const endTotalMinutes = parseTime12Hour(end);
+
+                if (endTotalMinutes < startTotalMinutes) { // Handles overnight case
                     return (endTotalMinutes + 24 * 60) - startTotalMinutes;
                 }
                 return endTotalMinutes - startTotalMinutes;
