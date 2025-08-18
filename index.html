@@ -221,11 +221,11 @@
         <button class="remove-rider-btn absolute -top-3 -right-3 w-7 h-7 flex items-center justify-center bg-red-500 text-white rounded-full font-bold text-lg hover:bg-red-600 transform hover:scale-110 transition-transform" onclick="this.parentElement.remove()" title="Remove Rider">&times;</button>
         <h3 class="font-bold font-heading text-lg mb-4 text-primary dark:text-dark-primary">Rider</h3>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Queued Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md queued"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Accepted Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md accepted"></label></div>
+            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Queued Time <input type="text" placeholder="0:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md queued"></label></div>
+            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Accepted Time <input type="text" placeholder="0:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md accepted"></label></div>
             <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Committed Pickup Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md committed"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Near Pickup Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md nearpickup"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Picked Up Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md pickedup"></label></div>
+            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Near Pickup Time <input type="text" placeholder="0:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md nearpickup"></label></div>
+            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Picked Up Time <input type="text" placeholder="0:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md pickedup"></label></div>
             <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Est. Dropoff Departure <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md dropoff"></label></div>
         </div>
     </div>
@@ -330,17 +330,35 @@
             const riderTemplate = document.getElementById('riderTemplate');
             const resultDiv = document.getElementById('result');
             
-            const timeRegex = /^(0[1-9]|1[0-2]):[0-5]\d\s(AM|PM)$/i;
+            const timeRegexFlexible = /^(0?[1-9]|1[0-2]):[0-5]\d\s(AM|PM)$/i;
+            const timeRegexStrict = /^(0[1-9]|1[0-2]):[0-5]\d\s(AM|PM)$/i;
+            const timeRegexSingleDigitHour = /^[1-9]:[0-5]\d\s(AM|PM)$/i;
+
 
             function validateInputs() {
                 let isValid = true;
                 const inputs = ridersContainer.querySelectorAll('input[type="text"]');
                 inputs.forEach(input => {
-                    if (input.value && !timeRegex.test(input.value)) {
-                        input.classList.add('invalid');
-                        isValid = false;
+                    let isStrict = input.classList.contains('committed') || input.classList.contains('dropoff');
+                    
+                    if (input.value) {
+                         if (isStrict) {
+                            if (!timeRegexStrict.test(input.value)) {
+                                input.classList.add('invalid');
+                                isValid = false;
+                            } else {
+                                input.classList.remove('invalid');
+                            }
+                        } else {
+                             if (!timeRegexFlexible.test(input.value) || timeRegexStrict.test(input.value)) {
+                                input.classList.add('invalid');
+                                isValid = false;
+                            } else {
+                                input.classList.remove('invalid');
+                            }
+                        }
                     } else {
-                        input.classList.remove('invalid');
+                         input.classList.remove('invalid');
                     }
                 });
                 return isValid;
@@ -348,11 +366,7 @@
             
             ridersContainer.addEventListener('input', (e) => {
                 if (e.target.tagName === 'INPUT' && e.target.type === 'text') {
-                    if (e.target.value && !timeRegex.test(e.target.value)) {
-                        e.target.classList.add('invalid');
-                    } else {
-                        e.target.classList.remove('invalid');
-                    }
+                    validateInputs(); // Re-validate all inputs on any change for simplicity
                 }
             });
 
@@ -371,7 +385,7 @@
             calculateBtn.addEventListener("click", () => {
                 resultDiv.innerHTML = '';
                 if (!validateInputs()) {
-                    resultDiv.innerHTML = `<div class="p-4 text-red-700 bg-red-100 border-l-4 border-red-500 rounded-r-lg"><p class="font-bold">Validation Error</p><p>Please correct the highlighted time fields. The format must be HH:MM AM/PM (e.g., 02:30 PM).</p></div>`;
+                    resultDiv.innerHTML = `<div class="p-4 text-red-700 bg-red-100 border-l-4 border-red-500 rounded-r-lg"><p class="font-bold">Validation Error</p><p>Please correct formats. Most fields accept H:MM AM/PM, but 'Committed' and 'Dropoff' require HH:MM AM/PM.</p></div>`;
                     return;
                 }
 
@@ -494,4 +508,3 @@
     </script>
 </body>
 </html>
-
