@@ -262,7 +262,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- 3D BACKGROUND LOGIC ---
+            // --- 3D BACKGROUND LOGIC (UNCHANGED) ---
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer({
@@ -307,7 +307,7 @@
             createShapes();
             animate();
 
-            // --- THEME TOGGLE LOGIC ---
+            // --- THEME TOGGLE LOGIC (UNCHANGED) ---
             const themeToggleBtn = document.getElementById('theme-toggle');
             const lightIcon = document.getElementById('theme-toggle-light-icon');
             const darkIcon = document.getElementById('theme-toggle-dark-icon');
@@ -334,7 +334,7 @@
                 themeToggleBtn.style.transform = `rotate(${newTheme === 'dark' ? 180 : 0}deg)`;
             });
 
-            // --- APPLICATION LOGIC ---
+            // --- APPLICATION LOGIC (UPDATED) ---
             const addRiderBtn = document.getElementById('addRiderBtn');
             const calculateBtn = document.getElementById('calculateBtn');
             const ridersContainer = document.getElementById('ridersContainer');
@@ -346,34 +346,80 @@
 
             closeReasonModalBtn.addEventListener('click', () => reasonModal.classList.add('hidden'));
             
+            /**
+             * [UPDATED] Parses a time string (e.g., "5:30 PM", "5/30pm") into a 24-hour format string.
+             * @param {string} timeString The time string to parse.
+             * @param {boolean} withSeconds Whether to expect and parse seconds.
+             * @returns {string|null} The time in "HH:mm:ss" or "HH:mm" format, or null if invalid.
+             */
             function parseTime(timeString, withSeconds = false) {
-                if (!timeString) return null;
-                timeString = timeString.trim().toUpperCase();
-                
-                const secondsRegexPart = withSeconds ? '(?::(\\d{2}))' : '';
-                const regex = new RegExp(`^(\\d{1,2}):(\\d{2})${secondsRegexPart}\\s*(AM|PM)$`);
-                const slashRegex = new RegExp(`^(\\d{1,2})\\/(\\d{2})(?:\\/(\\d{2}))?\\s*(AM|PM)$`);
+                if (!timeString || typeof timeString !== 'string') return null;
 
-                let match = timeString.match(regex) || timeString.match(slashRegex);
-                
-                if (match) {
-                    let hours = parseInt(match[1], 10);
-                    let minutes = parseInt(match[2], 10);
-                    let period = match[match.length - 1];
-                    
-                    if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) return null;
-                    if (period === 'PM' && hours < 12) hours += 12;
-                    if (period === 'AM' && hours === 12) hours = 0;
-                    
-                    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                // Normalize input: trim, uppercase, replace '/', add space before AM/PM.
+                let normalized = timeString.trim().toUpperCase().replace('/', ':');
+                if (!normalized.includes(' ')) {
+                    normalized = normalized.replace('AM', ' AM').replace('PM', ' PM');
                 }
-                return null;
+
+                // Regex to capture hours, minutes, optional seconds, and period (AM/PM).
+                const regex = withSeconds 
+                    ? /^(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)$/
+                    : /^(\d{1,2}):(\d{2})\s*(AM|PM)$/;
+                
+                const match = normalized.match(regex);
+                if (!match) return null;
+
+                let hours = parseInt(match[1], 10);
+                let minutes = parseInt(match[2], 10);
+                let seconds = withSeconds ? parseInt(match[3], 10) : 0;
+                const period = match[withSeconds ? 4 : 3];
+
+                // Validate time component ranges.
+                if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) {
+                    return null;
+                }
+
+                // Convert to 24-hour format.
+                if (period === 'PM' && hours < 12) hours += 12;
+                if (period === 'AM' && hours === 12) hours = 0; // Midnight case.
+
+                const h = String(hours).padStart(2, '0');
+                const m = String(minutes).padStart(2, '0');
+                
+                if (withSeconds) {
+                    const s = String(seconds).padStart(2, '0');
+                    return `${h}:${m}:${s}`;
+                }
+                return `${h}:${m}`;
+            }
+
+            /**
+             * [UPDATED] Calculates the difference in minutes between two 24-hour time strings.
+             * Handles overnight differences correctly.
+             * @param {string} start Time string like "HH:mm" or "HH:mm:ss".
+             * @param {string} end Time string like "HH:mm" or "HH:mm:ss".
+             * @returns {number} The difference in minutes.
+             */
+            function diffMinutes(start, end) {
+                if (!start || !end) return 0;
+                // Use a fixed date to create Date objects for easy and robust time comparison.
+                const startDate = new Date(`1970-01-01T${start}Z`);
+                const endDate = new Date(`1970-01-01T${end}Z`);
+                
+                let diff = endDate.getTime() - startDate.getTime(); // Difference in milliseconds.
+
+                if (diff < 0) { // Handle overnight case.
+                    diff += 24 * 60 * 60 * 1000; // Add 24 hours in milliseconds.
+                }
+                
+                return Math.round(diff / (1000 * 60)); // Convert to minutes.
             }
 
             function validateAllInputs() {
                 let allValid = true;
                 document.querySelectorAll('.time-input').forEach(input => {
                     const isCurrentTime = input.id === 'currentTime';
+                    // An input is valid if it's empty OR if it parses correctly.
                     if (input.value.trim() !== '' && !parseTime(input.value, isCurrentTime)) {
                         input.classList.add('invalid');
                         allValid = false;
@@ -387,12 +433,13 @@
             const validateSingleInput = (e) => {
                  const isCurrentTime = e.target.id === 'currentTime';
                  if (e.target.value.trim() !== '' && !parseTime(e.target.value, isCurrentTime)) {
-                    e.target.classList.add('invalid');
-                } else {
-                    e.target.classList.remove('invalid');
-                }
+                     e.target.classList.add('invalid');
+                 } else {
+                     e.target.classList.remove('invalid');
+                 }
             }
 
+            // Attach validation listener to all time inputs.
             document.querySelectorAll('.time-input').forEach(input => {
                 input.addEventListener('input', validateSingleInput);
             });
@@ -403,17 +450,19 @@
                 newRiderNode.querySelector('h3').textContent = `Rider ${riderCount}`;
                 newRiderNode.querySelector('.remove-rider-btn').addEventListener('click', () => {
                     newRiderNode.remove();
+                    // Re-number remaining riders.
                     ridersContainer.querySelectorAll('.rider-card').forEach((card, index) => {
                         card.querySelector('h3').textContent = `Rider ${index + 1}`;
                     });
                 });
+                // Add validation listener to new inputs.
                 newRiderNode.querySelectorAll('.time-input').forEach(input => {
                     input.addEventListener('input', validateSingleInput);
                 });
                 ridersContainer.appendChild(newRiderNode);
             };
 
-            addRider(); // Add the first rider by default
+            addRider(); // Add the first rider by default.
             addRiderBtn.addEventListener('click', addRider);
 
             calculateBtn.addEventListener("click", () => {
@@ -423,7 +472,6 @@
                     return;
                 }
 
-                // **BUG FIX:** Select only riders inside the container, not the template.
                 const riders = ridersContainer.querySelectorAll(".rider-card");
                 let totalDispatchingTime = 0, delays = [], cancellationReason = "", hasMultipleRiders = riders.length > 1, firstRiderIssue = false;
                 
@@ -509,17 +557,6 @@
                 modalReasonText.textContent = cancellationReason;
                 reasonModal.classList.remove('hidden');
             });
-
-            function diffMinutes(start, end) {
-                if (!start || !end) return 0;
-                const [sh, sm] = start.split(":").map(Number);
-                const [eh, em] = end.split(":").map(Number);
-                let diff = (eh * 60 + em) - (sh * 60 + sm);
-                if (diff < 0) { // Handle overnight case
-                    diff += 24 * 60;
-                }
-                return diff;
-            }
         });
     </script>
 </body>
