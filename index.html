@@ -434,7 +434,14 @@
             // --- GEMINI API FUNCTIONS ---
 
             async function callGemini(prompt, retries = 3, delay = 1000) {
-                const apiKey = ""; // Canvas will provide the key
+                // IMPORTANT: The API key has been placed here.
+                const apiKey = "AIzaSyApyIvli_mZ22xX9WjM7heILveTktMFr_Y"; 
+                
+                if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY_HERE") {
+                    alert("API Key is missing. Please add your Gemini API key to the script.");
+                    return "API Key Missing";
+                }
+
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
                 
                 let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
