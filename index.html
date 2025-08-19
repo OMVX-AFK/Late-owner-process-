@@ -55,6 +55,10 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes modal-scale-in {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
         @keyframes glow {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
@@ -75,6 +79,13 @@
         @keyframes pulse-glow-dark {
             0%, 100% { box-shadow: 0 0 15px 0px rgba(127, 122, 255, 0.4); }
             50% { box-shadow: 0 0 30px 5px rgba(127, 122, 255, 0.6); }
+        }
+        /* Shake animation for invalid inputs */
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
         }
 
         #bg-canvas {
@@ -106,12 +117,16 @@
         .animate-fadeInUp {
             animation: fadeInUp 0.6s ease-out forwards;
         }
+        .modal-content {
+             animation: modal-scale-in 0.3s ease-out forwards;
+        }
         .form-input {
             transition: all 0.2s ease-in-out;
         }
         .form-input.invalid {
             border-color: #ef4444 !important;
-            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4) !important;
+            box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.5) !important;
+            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
         }
         .btn-glow {
             position: relative;
@@ -152,7 +167,6 @@
     <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl relative z-10">
         
         <header class="relative flex flex-col justify-center items-center mb-8 sm:mb-12 animate-fadeInUp" style="animation-delay: 100ms;">
-            <!-- Logo container: absolute on large screens, relative (stacked) on small screens -->
             <div class="logo-glow sm:absolute sm:top-0 sm:left-0 mb-4 sm:mb-0">
                 <img src="https://i.ibb.co/TxmWmdRd/image.png" alt="Primary Logo" class="h-16 w-16">
             </div>
@@ -162,29 +176,29 @@
                 </h1>
                 <div class="glowing-line mt-3 mx-auto"></div>
             </div>
-            <!-- Theme toggle button -->
-            <button id="theme-toggle" class="absolute top-0 right-0 p-2 rounded-full text-text-secondary dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-dark-primary">
-                <svg id="theme-toggle-light-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <button id="theme-toggle" class="absolute top-0 right-0 p-2 rounded-full text-text-secondary dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-dark-primary transition-transform duration-300">
+                <svg id="theme-toggle-light-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 <svg id="theme-toggle-dark-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
             </button>
         </header>
 
         <main class="bg-card dark:bg-dark-card p-6 sm:p-10 rounded-2xl shadow-2xl glass-card animate-fadeInUp" style="animation-delay: 200ms;">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-8 border-b border-border dark:border-dark-border">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 pb-8 border-b border-border dark:border-dark-border">
                 <div>
                     <label for="vertical" class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary mb-2">Business Vertical</label>
                     <select id="vertical" class="w-full p-3 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-lg shadow-sm focus:ring-primary dark:focus:ring-dark-primary form-input">
-                        <option>FV</option>
-                        <option>NFV</option>
-                        <option>TMart</option>
+                        <option>FV</option> <option>NFV</option> <option>TMart</option>
                     </select>
                 </div>
                 <div>
                     <label for="riderReachable" class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary mb-2">Rider Status</label>
                     <select id="riderReachable" class="w-full p-3 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-lg shadow-sm focus:ring-primary dark:focus:ring-dark-primary form-input">
-                        <option value="yes">Reachable</option>
-                        <option value="no">Unreachable</option>
+                        <option value="yes">Reachable</option> <option value="no">Unreachable</option>
                     </select>
+                </div>
+                 <div>
+                    <label for="currentTime" class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary mb-2">Current Time</label>
+                    <input type="text" id="currentTime" placeholder="00:00:00 AM/PM" class="form-input w-full p-3 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-lg shadow-sm focus:ring-primary dark:focus:ring-dark-primary time-input">
                 </div>
             </div>
 
@@ -193,11 +207,11 @@
             </div>
 
             <div class="flex flex-col sm:flex-row gap-4 mt-10">
-                <button id="addRiderBtn" class="w-full sm:w-auto flex-grow flex items-center justify-center gap-2 bg-secondary dark:bg-dark-secondary hover:bg-secondary-hover dark:hover:bg-dark-secondary-hover text-white dark:text-dark-background font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:-translate-y-1">
+                <button id="addRiderBtn" class="w-full sm:w-auto flex-grow flex items-center justify-center gap-2 bg-secondary dark:bg-dark-secondary hover:bg-secondary-hover dark:hover:bg-dark-secondary-hover text-white dark:text-dark-background font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:-translate-y-1 active:translate-y-0">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" /></svg>
                     Add Rider
                 </button>
-                <button id="calculateBtn" class="w-full sm:w-auto flex-grow flex items-center justify-center gap-2 bg-primary dark:bg-dark-primary hover:bg-primary-hover dark:hover:bg-dark-primary-hover text-white font-bold py-3 px-6 rounded-lg shadow-lg btn-glow transition-transform transform hover:-translate-y-1">
+                <button id="calculateBtn" class="w-full sm:w-auto flex-grow flex items-center justify-center gap-2 bg-primary dark:bg-dark-primary hover:bg-primary-hover dark:hover:bg-dark-primary-hover text-white font-bold py-3 px-6 rounded-lg shadow-lg btn-glow transition-transform transform hover:-translate-y-1 active:translate-y-0">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M4 2a1 1 0 00-1 1v1H2a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H5V3a1 1 0 00-1-1zM2 8v8h16V8H2z"></path></svg>
                     Calculate
                 </button>
@@ -217,18 +231,34 @@
         </footer>
     </div>
 
-    <div id="riderTemplate" class="hidden rider-card rider p-5 mb-4 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-xl relative animate-fadeInUp transition-all duration-300 hover:border-primary dark:hover:border-dark-primary hover:shadow-lg">
-        <button class="remove-rider-btn absolute -top-3 -right-3 w-7 h-7 flex items-center justify-center bg-red-500 text-white rounded-full font-bold text-lg hover:bg-red-600 transform hover:scale-110 transition-transform" onclick="this.parentElement.remove()" title="Remove Rider">&times;</button>
-        <h3 class="font-bold font-heading text-lg mb-4 text-primary dark:text-dark-primary">Rider</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Queued Time <input type="text" placeholder="0:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md queued"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Accepted Time <input type="text" placeholder="0:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md accepted"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Committed Pickup Time <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md committed"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Near Pickup Time <input type="text" placeholder="0:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md nearpickup"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Picked Up Time <input type="text" placeholder="0:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md pickedup"></label></div>
-            <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Est. Dropoff Departure <input type="text" placeholder="00:00 AM/PM" class="form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md dropoff"></label></div>
+    <!-- Hidden Rider Template -->
+    <div id="riderTemplate" class="hidden">
+        <div class="rider-card rider p-5 mb-4 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-xl relative animate-fadeInUp transition-all duration-300 hover:border-primary dark:hover:border-dark-primary hover:shadow-lg hover:-translate-y-1">
+            <button class="remove-rider-btn absolute -top-3 -right-3 w-7 h-7 flex items-center justify-center bg-red-500 text-white rounded-full font-bold text-lg hover:bg-red-600 transform hover:scale-110 transition-transform" title="Remove Rider">&times;</button>
+            <h3 class="font-bold font-heading text-lg mb-4 text-primary dark:text-dark-primary">Rider</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Queued Time <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md queued"></label></div>
+                <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Accepted Time <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md accepted"></label></div>
+                <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Committed Pickup <input type="text" placeholder="00:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md committed"></label></div>
+                <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Near Pickup <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md nearpickup"></label></div>
+                <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Picked Up <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md pickedup"></label></div>
+                <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Est. Dropoff <input type="text" placeholder="00:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md dropoff"></label></div>
+            </div>
         </div>
     </div>
+    
+    <!-- Cancellation Reason Modal -->
+    <div id="reasonModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+        <div class="modal-content bg-card dark:bg-dark-card p-8 rounded-2xl shadow-2xl glass-card w-full max-w-md text-center">
+            <h2 class="text-2xl font-extrabold font-heading text-text-primary dark:text-dark-text-primary mb-2">Cancellation Reason</h2>
+            <div class="glowing-line mt-2 mb-6 mx-auto"></div>
+            <p id="modalReasonText" class="text-xl font-bold text-primary dark:text-dark-primary mb-8"></p>
+            <button id="closeReasonModalBtn" class="w-full bg-secondary dark:bg-dark-secondary hover:bg-secondary-hover dark:hover:bg-dark-secondary-hover text-white dark:text-dark-background font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:-translate-y-1 active:translate-y-0">
+                Close
+            </button>
+        </div>
+    </div>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -239,43 +269,28 @@
                 canvas: document.querySelector('#bg-canvas'),
                 alpha: true
             });
-
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
             camera.position.setZ(30);
-
             const shapes = [];
-
             function createShapes() {
                 shapes.forEach(s => scene.remove(s));
                 shapes.length = 0;
-
                 const isDark = document.documentElement.classList.contains('dark');
                 const color = isDark ? 0x7F7AFF : 0x5E56F8;
                 const material = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
-
-                const geometries = [
-                    new THREE.BoxGeometry(5, 5, 5),
-                    new THREE.TetrahedronGeometry(5),
-                    new THREE.OctahedronGeometry(5),
-                    new THREE.IcosahedronGeometry(5)
-                ];
-
+                const geometries = [ new THREE.BoxGeometry(5, 5, 5), new THREE.TetrahedronGeometry(5), new THREE.OctahedronGeometry(5), new THREE.IcosahedronGeometry(5) ];
                 for (let i = 0; i < 50; i++) {
                     const geometry = geometries[Math.floor(Math.random() * geometries.length)];
                     const shape = new THREE.Mesh(geometry, material);
-
                     const [x, y, z] = Array(3).fill().map(() => THREE.MathUtils.randFloatSpread(100));
                     shape.position.set(x, y, z);
-
                     const [rx, ry, rz] = Array(3).fill().map(() => Math.random() * 0.01 - 0.005);
                     shape.userData.rotation = { x: rx, y: ry, z: rz };
-
                     shapes.push(shape);
                     scene.add(shape);
                 }
             }
-
             function animate() {
                 requestAnimationFrame(animate);
                 shapes.forEach(shape => {
@@ -284,13 +299,11 @@
                 });
                 renderer.render(scene, camera);
             }
-
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
             });
-
             createShapes();
             animate();
 
@@ -298,7 +311,6 @@
             const themeToggleBtn = document.getElementById('theme-toggle');
             const lightIcon = document.getElementById('theme-toggle-light-icon');
             const darkIcon = document.getElementById('theme-toggle-dark-icon');
-
             const applyTheme = (theme) => {
                 if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
@@ -311,16 +323,15 @@
                 }
                 createShapes();
             };
-
             const savedTheme = localStorage.getItem('theme');
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             const currentTheme = savedTheme || (prefersDark ? 'dark' : 'light');
             applyTheme(currentTheme);
-            
             themeToggleBtn.addEventListener('click', () => {
                 const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
                 localStorage.setItem('theme', newTheme);
                 applyTheme(newTheme);
+                themeToggleBtn.style.transform = `rotate(${newTheme === 'dark' ? 180 : 0}deg)`;
             });
 
             // --- APPLICATION LOGIC ---
@@ -329,180 +340,185 @@
             const ridersContainer = document.getElementById('ridersContainer');
             const riderTemplate = document.getElementById('riderTemplate');
             const resultDiv = document.getElementById('result');
+            const reasonModal = document.getElementById('reasonModal');
+            const modalReasonText = document.getElementById('modalReasonText');
+            const closeReasonModalBtn = document.getElementById('closeReasonModalBtn');
+
+            closeReasonModalBtn.addEventListener('click', () => reasonModal.classList.add('hidden'));
             
-            const timeRegexFlexible = /^(0?[1-9]|1[0-2]):[0-5]\d\s(AM|PM)$/i;
-            const timeRegexStrict = /^(0[1-9]|1[0-2]):[0-5]\d\s(AM|PM)$/i;
-            const timeRegexSingleDigitHour = /^[1-9]:[0-5]\d\s(AM|PM)$/i;
+            function parseTime(timeString, withSeconds = false) {
+                if (!timeString) return null;
+                timeString = timeString.trim().toUpperCase();
+                
+                const secondsRegexPart = withSeconds ? '(?::(\\d{2}))' : '';
+                const regex = new RegExp(`^(\\d{1,2}):(\\d{2})${secondsRegexPart}\\s*(AM|PM)$`);
+                const slashRegex = new RegExp(`^(\\d{1,2})\\/(\\d{2})(?:\\/(\\d{2}))?\\s*(AM|PM)$`);
 
-
-            function validateInputs() {
-                let isValid = true;
-                const inputs = ridersContainer.querySelectorAll('input[type="text"]');
-                inputs.forEach(input => {
-                    let isStrict = input.classList.contains('committed') || input.classList.contains('dropoff');
+                let match = timeString.match(regex) || timeString.match(slashRegex);
+                
+                if (match) {
+                    let hours = parseInt(match[1], 10);
+                    let minutes = parseInt(match[2], 10);
+                    let period = match[match.length - 1];
                     
-                    if (input.value) {
-                         if (isStrict) {
-                            if (!timeRegexStrict.test(input.value)) {
-                                input.classList.add('invalid');
-                                isValid = false;
-                            } else {
-                                input.classList.remove('invalid');
-                            }
-                        } else {
-                             if (!timeRegexFlexible.test(input.value) || timeRegexStrict.test(input.value)) {
-                                input.classList.add('invalid');
-                                isValid = false;
-                            } else {
-                                input.classList.remove('invalid');
-                            }
-                        }
+                    if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) return null;
+                    if (period === 'PM' && hours < 12) hours += 12;
+                    if (period === 'AM' && hours === 12) hours = 0;
+                    
+                    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                }
+                return null;
+            }
+
+            function validateAllInputs() {
+                let allValid = true;
+                document.querySelectorAll('.time-input').forEach(input => {
+                    const isCurrentTime = input.id === 'currentTime';
+                    if (input.value.trim() !== '' && !parseTime(input.value, isCurrentTime)) {
+                        input.classList.add('invalid');
+                        allValid = false;
                     } else {
-                         input.classList.remove('invalid');
+                        input.classList.remove('invalid');
                     }
                 });
-                return isValid;
+                return allValid;
             }
-            
-            ridersContainer.addEventListener('input', (e) => {
-                if (e.target.tagName === 'INPUT' && e.target.type === 'text') {
-                    validateInputs(); // Re-validate all inputs on any change for simplicity
+
+            const validateSingleInput = (e) => {
+                 const isCurrentTime = e.target.id === 'currentTime';
+                 if (e.target.value.trim() !== '' && !parseTime(e.target.value, isCurrentTime)) {
+                    e.target.classList.add('invalid');
+                } else {
+                    e.target.classList.remove('invalid');
                 }
+            }
+
+            document.querySelectorAll('.time-input').forEach(input => {
+                input.addEventListener('input', validateSingleInput);
             });
 
             const addRider = () => {
-                const newRider = riderTemplate.cloneNode(true);
-                newRider.id = '';
-                newRider.classList.remove('hidden');
+                const newRiderNode = riderTemplate.firstElementChild.cloneNode(true);
                 const riderCount = ridersContainer.querySelectorAll('.rider-card').length + 1;
-                newRider.querySelector('h3').textContent = `Rider ${riderCount}`;
-                ridersContainer.appendChild(newRider);
+                newRiderNode.querySelector('h3').textContent = `Rider ${riderCount}`;
+                newRiderNode.querySelector('.remove-rider-btn').addEventListener('click', () => {
+                    newRiderNode.remove();
+                    ridersContainer.querySelectorAll('.rider-card').forEach((card, index) => {
+                        card.querySelector('h3').textContent = `Rider ${index + 1}`;
+                    });
+                });
+                newRiderNode.querySelectorAll('.time-input').forEach(input => {
+                    input.addEventListener('input', validateSingleInput);
+                });
+                ridersContainer.appendChild(newRiderNode);
             };
 
-            addRider();
+            addRider(); // Add the first rider by default
             addRiderBtn.addEventListener('click', addRider);
 
             calculateBtn.addEventListener("click", () => {
                 resultDiv.innerHTML = '';
-                if (!validateInputs()) {
-                    resultDiv.innerHTML = `<div class="p-4 text-red-700 bg-red-100 border-l-4 border-red-500 rounded-r-lg"><p class="font-bold">Validation Error</p><p>Please correct formats. Most fields accept H:MM AM/PM, but 'Committed' and 'Dropoff' require HH:MM AM/PM.</p></div>`;
+                if (!validateAllInputs()) {
+                    resultDiv.innerHTML = `<div class="p-4 text-red-700 bg-red-100 border-l-4 border-red-500 rounded-r-lg animate-fadeInUp"><p class="font-bold">Validation Error</p><p>Please correct the time formats (e.g., 5:30 PM or 05:30:00 PM for Current Time).</p></div>`;
                     return;
                 }
 
-                const riders = document.querySelectorAll(".rider:not(#riderTemplate)");
-                let totalDispatchingTime = 0;
-                let delays = [];
-                let cancellationReason = "";
-                let hasMultipleRiders = riders.length > 1;
-                let firstRiderIssue = false;
+                // **BUG FIX:** Select only riders inside the container, not the template.
+                const riders = ridersContainer.querySelectorAll(".rider-card");
+                let totalDispatchingTime = 0, delays = [], cancellationReason = "", hasMultipleRiders = riders.length > 1, firstRiderIssue = false;
                 
                 let timelineHTML = `<h5 class="text-xl font-bold font-heading mb-4 text-text-primary dark:text-dark-text-primary">Timeline:</h5>`;
+                const parsedCurrentTime = parseTime(document.getElementById('currentTime').value, true);
 
                 riders.forEach((rider, index) => {
-                    const queued = rider.querySelector(".queued").value;
-                    const accepted = rider.querySelector(".accepted").value;
-                    const committed = rider.querySelector(".committed").value;
-                    const nearpickup = rider.querySelector(".nearpickup").value;
-                    const pickedup = rider.querySelector(".pickedup").value;
-                    const dropoff = rider.querySelector(".dropoff").value;
+                    const times = {
+                        queued: parseTime(rider.querySelector(".queued").value),
+                        accepted: parseTime(rider.querySelector(".accepted").value),
+                        committed: parseTime(rider.querySelector(".committed").value),
+                        nearpickup: parseTime(rider.querySelector(".nearpickup").value),
+                        pickedup: parseTime(rider.querySelector(".pickedup").value),
+                        dropoff: parseTime(rider.querySelector(".dropoff").value)
+                    };
+                    const rawTimes = {
+                        queued: rider.querySelector(".queued").value,
+                        accepted: rider.querySelector(".accepted").value,
+                        committed: rider.querySelector(".committed").value,
+                        nearpickup: rider.querySelector(".nearpickup").value,
+                        pickedup: rider.querySelector(".pickedup").value,
+                        dropoff: rider.querySelector(".dropoff").value,
+                    };
 
-                    timelineHTML += `<div class="bg-background dark:bg-dark-background border-l-4 border-primary dark:border-dark-primary rounded-r-lg p-4 mb-3">
+                    timelineHTML += `<div class="bg-background dark:bg-dark-background border-l-4 border-primary dark:border-dark-primary rounded-r-lg p-4 mb-3 animate-fadeInUp" style="animation-delay: ${index * 100}ms">
                         <strong class="font-bold text-text-primary dark:text-dark-text-primary">Rider ${index + 1}:</strong><br>`;
+                    
+                    if (rawTimes.queued) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Queued: ${rawTimes.queued}</span><br>`;
+                    if (rawTimes.accepted) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Accepted: ${rawTimes.accepted}</span><br>`;
+                    if (rawTimes.committed) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Committed Pickup: ${rawTimes.committed}</span><br>`;
+                    if (rawTimes.nearpickup) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Near Pickup: ${rawTimes.nearpickup}</span><br>`;
+                    if (rawTimes.pickedup) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Picked Up: ${rawTimes.pickedup}</span><br>`;
+                    if (rawTimes.dropoff) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Est. Dropoff Departure: ${rawTimes.dropoff}</span><br>`;
 
-                    if (queued) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Queued: ${queued}</span><br>`;
-                    if (accepted) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Accepted: ${accepted}</span><br>`;
-                    if (committed) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Committed Pickup: ${committed}</span><br>`;
-                    if (nearpickup) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Near Pickup: ${nearpickup}</span><br>`;
-                    if (pickedup) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Picked Up: ${pickedup}</span><br>`;
-                    if (dropoff) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Est. Dropoff Departure: ${dropoff}</span><br>`;
-
-                    if (queued && accepted) {
-                        let dispatchTime = diffMinutes(queued, accepted);
+                    if (times.queued && times.accepted) {
+                        let dispatchTime = diffMinutes(times.queued, times.accepted);
                         totalDispatchingTime += dispatchTime;
                         timelineHTML += `<em class="font-semibold text-text-primary dark:text-dark-text-primary">Dispatching Time: ${dispatchTime} mins</em><br>`;
                     }
-
-                    if (committed && pickedup) {
-                        let d = diffMinutes(committed, pickedup);
+                    if (times.committed && times.pickedup) {
+                        let d = diffMinutes(times.committed, times.pickedup);
                         if (d > 0) delays.push(d);
                         timelineHTML += `<em class="font-semibold text-text-primary dark:text-dark-text-primary">Delay (Committed → Picked Up): ${d} mins</em><br>`;
-                    } else if (nearpickup && pickedup) {
-                        let d = diffMinutes(nearpickup, pickedup);
+                    } else if (times.nearpickup && times.pickedup) {
+                        let d = diffMinutes(times.nearpickup, times.pickedup);
                         if (d > 0) delays.push(d);
                         timelineHTML += `<em class="font-semibold text-text-primary dark:text-dark-text-primary">Delay (Near Pickup → Picked Up): ${d} mins</em><br>`;
                     }
-
-                    if (dropoff && pickedup) {
-                        let dropoffDelay = diffMinutes(pickedup, dropoff);
-                        if (dropoffDelay > 0) {
-                            delays.push(dropoffDelay);
-                            timelineHTML += `<em class="font-semibold text-text-primary dark:text-dark-text-primary">Dropoff Delay: ${dropoffDelay} mins</em><br>`;
+                    if (times.dropoff && parsedCurrentTime) {
+                        let currentDelay = diffMinutes(times.dropoff, parsedCurrentTime);
+                        if (currentDelay > 0) {
+                            delays.push(currentDelay);
+                            timelineHTML += `<em class="font-semibold text-text-primary dark:text-dark-text-primary">Current Dropoff Delay: ${currentDelay} mins</em><br>`;
                         }
                     }
-
                     if (index === 0) {
-                        if ((accepted && !pickedup) || (queued && !accepted)) {
+                        if ((times.accepted && !times.pickedup) || (times.queued && !times.accepted)) {
                             firstRiderIssue = true;
                             timelineHTML += `<strong class="text-red-500 font-bold">Issue detected with Rider 1</strong><br>`;
                         }
                     }
-
                     timelineHTML += `</div>`;
                 });
 
                 let riderReachable = document.getElementById("riderReachable").value;
                 let maxDelay = Math.max(totalDispatchingTime, ...(delays.length ? delays : [0]));
-
-                if (hasMultipleRiders && firstRiderIssue) {
-                    cancellationReason = "Order picked up/delivered by another rider";
-                } else if (maxDelay === totalDispatchingTime && totalDispatchingTime > 0) {
-                    cancellationReason = "Lack of Delivery Men";
-                } else if (riderReachable === "yes" && delays.length > 0) {
-                    cancellationReason = "Late Delivery";
-                } else if (riderReachable === "no") {
-                    cancellationReason = "Rider Unreachable";
-                } else {
-                    cancellationReason = "Preparation Delay";
-                }
+                if (hasMultipleRiders && firstRiderIssue) cancellationReason = "Order picked up/delivered by another rider";
+                else if (maxDelay === totalDispatchingTime && totalDispatchingTime > 0) cancellationReason = "Lack of Delivery Men";
+                else if (riderReachable === "yes" && delays.length > 0) cancellationReason = "Late Delivery";
+                else if (riderReachable === "no") cancellationReason = "Rider Unreachable";
+                else cancellationReason = "Preparation Delay";
 
                 let resultHTML = `<div class="border-t-2 border-border dark:border-dark-border pt-8 mt-8 animate-fadeInUp">` + timelineHTML;
-                resultHTML += `<div class="mt-6 p-6 bg-background dark:bg-dark-background rounded-xl">
-                                <h5 class="text-xl font-bold font-heading mb-3 text-text-primary dark:text-dark-text-primary">Summary:</h5>`;
-                if (totalDispatchingTime > 0) {
-                    resultHTML += `<p class="text-text-secondary dark:text-dark-text-secondary">Total Dispatching Time: <span class="font-bold text-text-primary dark:text-dark-text-primary">${totalDispatchingTime} mins</span></p>`;
-                }
-                if (delays.length > 0) {
-                    resultHTML += `<p class="text-text-secondary dark:text-dark-text-secondary">Delays: <span class="font-bold text-text-primary dark:text-dark-text-primary">${delays.join(", ")} mins</span></p>`;
-                }
-                resultHTML += `<p class="font-heading font-extrabold mt-4 text-xl"><strong class="text-red-500 dark:text-red-400">Cancellation Reason:</strong> <span class="text-primary dark:text-dark-primary">${cancellationReason}</span></p></div></div>`;
-
+                resultHTML += `<div class="mt-6 p-6 bg-background dark:bg-dark-background rounded-xl animate-fadeInUp" style="animation-delay: ${riders.length * 100}ms">
+                    <h5 class="text-xl font-bold font-heading mb-3 text-text-primary dark:text-dark-text-primary">Summary:</h5>`;
+                if (totalDispatchingTime > 0) resultHTML += `<p class="text-text-secondary dark:text-dark-text-secondary">Total Dispatching Time: <span class="font-bold text-text-primary dark:text-dark-text-primary">${totalDispatchingTime} mins</span></p>`;
+                if (delays.length > 0) resultHTML += `<p class="text-text-secondary dark:text-dark-text-secondary">Delays: <span class="font-bold text-text-primary dark:text-dark-text-primary">${delays.join(", ")} mins</span></p>`;
+                resultHTML += `<p class="font-heading font-extrabold mt-4 text-xl"><strong class="text-red-500 dark:text-red-400">Cancellation Reason:</strong> <span id="reasonText" class="text-primary dark:text-dark-primary">${cancellationReason}</span></p>`;
+                resultHTML += `</div></div>`;
                 resultDiv.innerHTML = resultHTML;
+                
+                // Show modal with the reason
+                modalReasonText.textContent = cancellationReason;
+                reasonModal.classList.remove('hidden');
             });
 
             function diffMinutes(start, end) {
                 if (!start || !end) return 0;
-
-                const parseTime12Hour = (timeStr) => {
-                    const upperTime = timeStr.toUpperCase();
-                    const [time, modifier] = upperTime.split(' ');
-                    let [hours, minutes] = time.split(':').map(Number);
-
-                    if (modifier === 'PM' && hours < 12) {
-                        hours += 12;
-                    }
-                    if (modifier === 'AM' && hours === 12) { // Midnight case (12:xx AM)
-                        hours = 0;
-                    }
-                    return hours * 60 + minutes;
-                };
-
-                const startTotalMinutes = parseTime12Hour(start);
-                const endTotalMinutes = parseTime12Hour(end);
-
-                if (endTotalMinutes < startTotalMinutes) { // Handles overnight case
-                    return (endTotalMinutes + 24 * 60) - startTotalMinutes;
+                const [sh, sm] = start.split(":").map(Number);
+                const [eh, em] = end.split(":").map(Number);
+                let diff = (eh * 60 + em) - (sh * 60 + sm);
+                if (diff < 0) { // Handle overnight case
+                    diff += 24 * 60;
                 }
-                return endTotalMinutes - startTotalMinutes;
+                return diff;
             }
         });
     </script>
