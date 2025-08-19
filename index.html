@@ -198,7 +198,7 @@
                 </div>
                  <div>
                     <label for="currentTime" class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary mb-2">Current Time</label>
-                    <input type="text" id="currentTime" placeholder="00:00:00 AM/PM" class="form-input w-full p-3 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-lg shadow-sm focus:ring-primary dark:focus:ring-dark-primary time-input">
+                    <input type="text" id="currentTime" placeholder="0:00 AM/PM" class="form-input w-full p-3 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-lg shadow-sm focus:ring-primary dark:focus:ring-dark-primary time-input">
                 </div>
             </div>
 
@@ -236,7 +236,7 @@
         <div class="rider-card rider p-5 mb-4 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-xl relative animate-fadeInUp transition-all duration-300 hover:border-primary dark:hover:border-dark-primary hover:shadow-lg hover:-translate-y-1">
             <button class="remove-rider-btn absolute -top-3 -right-3 w-7 h-7 flex items-center justify-center bg-red-500 text-white rounded-full font-bold text-lg hover:bg-red-600 transform hover:scale-110 transition-transform" title="Remove Rider">&times;</button>
             <h3 class="font-bold font-heading text-lg mb-4 text-primary dark:text-dark-primary">Rider</h3>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div class="rider-fields grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Queued Time <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md queued"></label></div>
                 <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Accepted Time <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md accepted"></label></div>
                 <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Committed Pickup <input type="text" placeholder="00:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md committed"></label></div>
@@ -343,84 +343,46 @@
             const reasonModal = document.getElementById('reasonModal');
             const modalReasonText = document.getElementById('modalReasonText');
             const closeReasonModalBtn = document.getElementById('closeReasonModalBtn');
+            const verticalSelect = document.getElementById('vertical');
 
             closeReasonModalBtn.addEventListener('click', () => reasonModal.classList.add('hidden'));
             
-            /**
-             * [UPDATED] Parses a time string (e.g., "5:30 PM", "5/30pm") into a 24-hour format string.
-             * @param {string} timeString The time string to parse.
-             * @param {boolean} withSeconds Whether to expect and parse seconds.
-             * @returns {string|null} The time in "HH:mm:ss" or "HH:mm" format, or null if invalid.
-             */
-            function parseTime(timeString, withSeconds = false) {
-                if (!timeString || typeof timeString !== 'string') return null;
-
-                // Normalize input: trim, uppercase, replace '/', add space before AM/PM.
-                let normalized = timeString.trim().toUpperCase().replace('/', ':');
-                if (!normalized.includes(' ')) {
-                    normalized = normalized.replace('AM', ' AM').replace('PM', ' PM');
-                }
-
-                // Regex to capture hours, minutes, optional seconds, and period (AM/PM).
-                const regex = withSeconds 
-                    ? /^(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)$/
-                    : /^(\d{1,2}):(\d{2})\s*(AM|PM)$/;
+            // --- NEW LOGIC FUNCTIONS ---
+            function parseTime(timeStr) {
+                if (!timeStr) return null;
+                let parts = timeStr.trim().split(" ");
+                let timePart = parts[0];
+                let ampm = parts.length > 1 ? parts[1].toUpperCase() : (timeStr.toUpperCase().includes('AM') ? 'AM' : (timeStr.toUpperCase().includes('PM') ? 'PM' : null));
                 
-                const match = normalized.match(regex);
-                if (!match) return null;
-
-                let hours = parseInt(match[1], 10);
-                let minutes = parseInt(match[2], 10);
-                let seconds = withSeconds ? parseInt(match[3], 10) : 0;
-                const period = match[withSeconds ? 4 : 3];
-
-                // Validate time component ranges.
-                if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) {
-                    return null;
+                if (!ampm) { // Guess AM/PM if not provided, for simplicity
+                    let hGuess = parseInt(timePart.split(":")[0], 10);
+                    if(hGuess >= 1 && hGuess < 7) ampm = 'PM'; // Guess PM for evening hours
+                    else ampm = 'AM';
                 }
 
-                // Convert to 24-hour format.
-                if (period === 'PM' && hours < 12) hours += 12;
-                if (period === 'AM' && hours === 12) hours = 0; // Midnight case.
+                let [h, m, s] = timePart.split(":").map(Number);
+                if (isNaN(h) || isNaN(m)) return NaN; // Invalid format
+                if (isNaN(s)) s = 0;
 
-                const h = String(hours).padStart(2, '0');
-                const m = String(minutes).padStart(2, '0');
-                
-                if (withSeconds) {
-                    const s = String(seconds).padStart(2, '0');
-                    return `${h}:${m}:${s}`;
-                }
-                return `${h}:${m}`;
+                if (ampm === "PM" && h < 12) h += 12;
+                if (ampm === "AM" && h === 12) h = 0; // Midnight case
+                return h * 60 + m + (s / 60);
             }
 
-            /**
-             * [UPDATED] Calculates the difference in minutes between two 24-hour time strings.
-             * Handles overnight differences correctly.
-             * @param {string} start Time string like "HH:mm" or "HH:mm:ss".
-             * @param {string} end Time string like "HH:mm" or "HH:mm:ss".
-             * @returns {number} The difference in minutes.
-             */
             function diffMinutes(start, end) {
-                if (!start || !end) return 0;
-                // Use a fixed date to create Date objects for easy and robust time comparison.
-                const startDate = new Date(`1970-01-01T${start}Z`);
-                const endDate = new Date(`1970-01-01T${end}Z`);
-                
-                let diff = endDate.getTime() - startDate.getTime(); // Difference in milliseconds.
-
-                if (diff < 0) { // Handle overnight case.
-                    diff += 24 * 60 * 60 * 1000; // Add 24 hours in milliseconds.
-                }
-                
-                return Math.round(diff / (1000 * 60)); // Convert to minutes.
+                let startMinutes = parseTime(start);
+                let endMinutes = parseTime(end);
+                if (startMinutes == null || endMinutes == null || isNaN(startMinutes) || isNaN(endMinutes)) return 0;
+                if (endMinutes < startMinutes) endMinutes += 24 * 60; // Handle overnight
+                return Math.round(endMinutes - startMinutes);
             }
 
-            function validateAllInputs() {
+            // --- VALIDATION (Adapted for new parseTime) ---
+             function validateAllInputs() {
                 let allValid = true;
                 document.querySelectorAll('.time-input').forEach(input => {
-                    const isCurrentTime = input.id === 'currentTime';
-                    // An input is valid if it's empty OR if it parses correctly.
-                    if (input.value.trim() !== '' && !parseTime(input.value, isCurrentTime)) {
+                    const parsed = parseTime(input.value);
+                    if (input.value.trim() !== '' && (parsed === null || isNaN(parsed))) {
                         input.classList.add('invalid');
                         allValid = false;
                     } else {
@@ -431,129 +393,195 @@
             }
 
             const validateSingleInput = (e) => {
-                 const isCurrentTime = e.target.id === 'currentTime';
-                 if (e.target.value.trim() !== '' && !parseTime(e.target.value, isCurrentTime)) {
-                     e.target.classList.add('invalid');
-                 } else {
-                     e.target.classList.remove('invalid');
-                 }
+                 const parsed = parseTime(e.target.value);
+                 if (e.target.value.trim() !== '' && (parsed === null || isNaN(parsed))) {
+                    e.target.classList.add('invalid');
+                } else {
+                    e.target.classList.remove('invalid');
+                }
             }
 
-            // Attach validation listener to all time inputs.
-            document.querySelectorAll('.time-input').forEach(input => {
-                input.addEventListener('input', validateSingleInput);
-            });
-
+            // --- EVENT LISTENERS (Adapted for new logic) ---
             const addRider = () => {
                 const newRiderNode = riderTemplate.firstElementChild.cloneNode(true);
                 const riderCount = ridersContainer.querySelectorAll('.rider-card').length + 1;
                 newRiderNode.querySelector('h3').textContent = `Rider ${riderCount}`;
+
+                // Logic for adding 'Scheduled Time' field for NFV
+                const vertical = verticalSelect.value;
+                if (vertical === "NFV" && riderCount === 1) {
+                    const scheduledField = document.createElement('div');
+                    scheduledField.innerHTML = `<label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Scheduled Time <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md scheduled"></label>`;
+                    const fieldsContainer = newRiderNode.querySelector('.rider-fields');
+                    fieldsContainer.insertBefore(scheduledField, fieldsContainer.firstChild);
+                }
+
                 newRiderNode.querySelector('.remove-rider-btn').addEventListener('click', () => {
                     newRiderNode.remove();
-                    // Re-number remaining riders.
                     ridersContainer.querySelectorAll('.rider-card').forEach((card, index) => {
                         card.querySelector('h3').textContent = `Rider ${index + 1}`;
                     });
                 });
-                // Add validation listener to new inputs.
+                
                 newRiderNode.querySelectorAll('.time-input').forEach(input => {
                     input.addEventListener('input', validateSingleInput);
                 });
                 ridersContainer.appendChild(newRiderNode);
             };
 
-            addRider(); // Add the first rider by default.
+            addRider(); // Add the first rider by default
             addRiderBtn.addEventListener('click', addRider);
+            
+            // Clear riders and add a new one when vertical changes, to apply NFV logic correctly
+            verticalSelect.addEventListener('change', () => {
+                ridersContainer.innerHTML = `<h2 class="text-xl font-bold font-heading text-text-primary dark:text-dark-text-primary mb-4">Rider Timestamps</h2>`;
+                addRider();
+            });
 
             calculateBtn.addEventListener("click", () => {
                 resultDiv.innerHTML = '';
                 if (!validateAllInputs()) {
-                    resultDiv.innerHTML = `<div class="p-4 text-red-700 bg-red-100 border-l-4 border-red-500 rounded-r-lg animate-fadeInUp"><p class="font-bold">Validation Error</p><p>Please correct the time formats (e.g., 5:30 PM or 05:30:00 PM for Current Time).</p></div>`;
+                    resultDiv.innerHTML = `<div class="p-4 text-red-700 bg-red-100 border-l-4 border-red-500 rounded-r-lg animate-fadeInUp"><p class="font-bold">Validation Error</p><p>Please correct the highlighted time formats (e.g., 5:30 PM).</p></div>`;
                     return;
                 }
 
-                const riders = ridersContainer.querySelectorAll(".rider-card");
-                let totalDispatchingTime = 0, delays = [], cancellationReason = "", hasMultipleRiders = riders.length > 1, firstRiderIssue = false;
-                
-                let timelineHTML = `<h5 class="text-xl font-bold font-heading mb-4 text-text-primary dark:text-dark-text-primary">Timeline:</h5>`;
-                const parsedCurrentTime = parseTime(document.getElementById('currentTime').value, true);
+                const vertical = verticalSelect.value;
+                const riders = document.querySelectorAll(".rider-card");
+                let cancellationReason = "";
+                let hasMultipleRiders = riders.length > 1;
+                let firstRiderIssue = false;
+                let timelineHTML = "";
+                const currentTimeInput = document.getElementById("currentTime").value;
+                const riderReachable = document.getElementById("riderReachable").value;
+
+                let groupedDelays = {
+                    "Dispatching Delay": 0,
+                    "Rider Delay": 0,
+                    "Preparation Delay": 0
+                };
 
                 riders.forEach((rider, index) => {
-                    const times = {
-                        queued: parseTime(rider.querySelector(".queued").value),
-                        accepted: parseTime(rider.querySelector(".accepted").value),
-                        committed: parseTime(rider.querySelector(".committed").value),
-                        nearpickup: parseTime(rider.querySelector(".nearpickup").value),
-                        pickedup: parseTime(rider.querySelector(".pickedup").value),
-                        dropoff: parseTime(rider.querySelector(".dropoff").value)
-                    };
-                    const rawTimes = {
-                        queued: rider.querySelector(".queued").value,
-                        accepted: rider.querySelector(".accepted").value,
-                        committed: rider.querySelector(".committed").value,
-                        nearpickup: rider.querySelector(".nearpickup").value,
-                        pickedup: rider.querySelector(".pickedup").value,
-                        dropoff: rider.querySelector(".dropoff").value,
-                    };
+                    const queued = rider.querySelector(".queued").value;
+                    const accepted = rider.querySelector(".accepted").value;
+                    const committed = rider.querySelector(".committed").value;
+                    const nearpickup = rider.querySelector(".nearpickup").value;
+                    const pickedup = rider.querySelector(".pickedup").value;
+                    const dropoff = rider.querySelector(".dropoff").value;
+                    let scheduled = null;
+                    if (vertical === "NFV" && index === 0) {
+                        scheduled = rider.querySelector(".scheduled")?.value;
+                    }
 
-                    timelineHTML += `<div class="bg-background dark:bg-dark-background border-l-4 border-primary dark:border-dark-primary rounded-r-lg p-4 mb-3 animate-fadeInUp" style="animation-delay: ${index * 100}ms">
+                    let riderTimeline = `<div class="bg-background dark:bg-dark-background border-l-4 border-primary dark:border-dark-primary rounded-r-lg p-4 mb-3 animate-fadeInUp" style="animation-delay: ${index * 100}ms">
                         <strong class="font-bold text-text-primary dark:text-dark-text-primary">Rider ${index + 1}:</strong><br>`;
-                    
-                    if (rawTimes.queued) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Queued: ${rawTimes.queued}</span><br>`;
-                    if (rawTimes.accepted) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Accepted: ${rawTimes.accepted}</span><br>`;
-                    if (rawTimes.committed) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Committed Pickup: ${rawTimes.committed}</span><br>`;
-                    if (rawTimes.nearpickup) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Near Pickup: ${rawTimes.nearpickup}</span><br>`;
-                    if (rawTimes.pickedup) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Picked Up: ${rawTimes.pickedup}</span><br>`;
-                    if (rawTimes.dropoff) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Est. Dropoff Departure: ${rawTimes.dropoff}</span><br>`;
+                    if (scheduled) riderTimeline += `<span class="text-text-secondary dark:text-dark-text-secondary">Scheduled: ${scheduled}</span><br>`;
+                    if (queued) riderTimeline += `<span class="text-text-secondary dark:text-dark-text-secondary">Queued: ${queued}</span><br>`;
+                    if (accepted) riderTimeline += `<span class="text-text-secondary dark:text-dark-text-secondary">Accepted: ${accepted}</span><br>`;
+                    if (committed) riderTimeline += `<span class="text-text-secondary dark:text-dark-text-secondary">Committed Pickup: ${committed}</span><br>`;
+                    if (nearpickup) riderTimeline += `<span class="text-text-secondary dark:text-dark-text-secondary">Near Pickup: ${nearpickup}</span><br>`;
+                    if (pickedup) riderTimeline += `<span class="text-text-secondary dark:text-dark-text-secondary">Picked Up: ${pickedup}</span><br>`;
+                    if (dropoff) riderTimeline += `<span class="text-text-secondary dark:text-dark-text-secondary">Est. Dropoff Departure: ${dropoff}</span><br>`;
 
-                    if (times.queued && times.accepted) {
-                        let dispatchTime = diffMinutes(times.queued, times.accepted);
-                        totalDispatchingTime += dispatchTime;
-                        timelineHTML += `<em class="font-semibold text-text-primary dark:text-dark-text-primary">Dispatching Time: ${dispatchTime} mins</em><br>`;
+                    if (queued && accepted) {
+                        let dispatchTime = diffMinutes(queued, accepted);
+                        if (vertical === "NFV" && scheduled) {
+                            let prepTime = diffMinutes(scheduled, queued);
+                            if (prepTime > 0) groupedDelays["Preparation Delay"] += prepTime;
+                            let realDispatch = diffMinutes(queued, accepted);
+                            groupedDelays["Dispatching Delay"] += realDispatch;
+                        } else {
+                            groupedDelays["Dispatching Delay"] += dispatchTime;
+                        }
                     }
-                    if (times.committed && times.pickedup) {
-                        let d = diffMinutes(times.committed, times.pickedup);
-                        if (d > 0) delays.push(d);
-                        timelineHTML += `<em class="font-semibold text-text-primary dark:text-dark-text-primary">Delay (Committed → Picked Up): ${d} mins</em><br>`;
-                    } else if (times.nearpickup && times.pickedup) {
-                        let d = diffMinutes(times.nearpickup, times.pickedup);
-                        if (d > 0) delays.push(d);
-                        timelineHTML += `<em class="font-semibold text-text-primary dark:text-dark-text-primary">Delay (Near Pickup → Picked Up): ${d} mins</em><br>`;
+
+                    if (committed && pickedup) {
+                        let d = diffMinutes(committed, pickedup);
+                        if (d > 0) groupedDelays["Rider Delay"] += d;
+                    } else if (nearpickup && pickedup) {
+                        let d = diffMinutes(nearpickup, pickedup);
+                        if (d > 0) groupedDelays["Rider Delay"] += d;
                     }
-                    if (times.dropoff && parsedCurrentTime) {
-                        let currentDelay = diffMinutes(times.dropoff, parsedCurrentTime);
+
+                    if (dropoff && pickedup) {
+                        let driving = diffMinutes(pickedup, dropoff);
+                        if (driving >= 0) riderTimeline += `<em class="font-semibold text-text-primary dark:text-dark-text-primary">Driving Time: ${driving} mins</em><br>`;
+                    }
+
+                    if (pickedup && currentTimeInput) {
+                        let currentDelay = diffMinutes(pickedup, currentTimeInput);
                         if (currentDelay > 0) {
-                            delays.push(currentDelay);
-                            timelineHTML += `<em class="font-semibold text-text-primary dark:text-dark-text-primary">Current Dropoff Delay: ${currentDelay} mins</em><br>`;
+                            groupedDelays["Rider Delay"] += currentDelay;
                         }
                     }
-                    if (index === 0) {
-                        if ((times.accepted && !times.pickedup) || (times.queued && !times.accepted)) {
-                            firstRiderIssue = true;
-                            timelineHTML += `<strong class="text-red-500 font-bold">Issue detected with Rider 1</strong><br>`;
+
+                    if (index === 0 && ((accepted && !pickedup) || (queued && !accepted))) {
+                        firstRiderIssue = true;
+                        riderTimeline += `<strong class="text-red-500 font-bold">Issue detected with Rider 1</strong><br>`;
+                    }
+
+                    if (committed && nearpickup && currentTimeInput) {
+                        let committedDelay = diffMinutes(committed, currentTimeInput);
+                        if (committedDelay > 0 && !pickedup) {
+                            groupedDelays["Preparation Delay"] += committedDelay;
                         }
                     }
-                    timelineHTML += `</div>`;
+
+                    if (index < riders.length - 1) {
+                        let nextRider = riders[index + 1];
+                        let nextQueued = nextRider.querySelector(".queued").value;
+                        let lastTime = dropoff || pickedup || nearpickup || committed || accepted || queued;
+                        if (lastTime && nextQueued) {
+                            let gap = diffMinutes(lastTime, nextQueued);
+                            if (gap > 0) {
+                                groupedDelays["Rider Delay"] += gap;
+                                riderTimeline += `<em class="font-semibold text-orange-500">Gap until Rider ${index + 2} queued: ${gap} mins</em><br>`;
+                            }
+                        }
+                    }
+                    riderTimeline += `</div>`;
+                    timelineHTML += riderTimeline;
                 });
 
-                let riderReachable = document.getElementById("riderReachable").value;
-                let maxDelay = Math.max(totalDispatchingTime, ...(delays.length ? delays : [0]));
-                if (hasMultipleRiders && firstRiderIssue) cancellationReason = "Order picked up/delivered by another rider";
-                else if (maxDelay === totalDispatchingTime && totalDispatchingTime > 0) cancellationReason = "Lack of Delivery Men";
-                else if (riderReachable === "yes" && delays.length > 0) cancellationReason = "Late Delivery";
-                else if (riderReachable === "no") cancellationReason = "Rider Unreachable";
-                else cancellationReason = "Preparation Delay";
+                let biggestDelayType = "";
+                let biggestDelayValue = 0;
+                Object.keys(groupedDelays).forEach(type => {
+                    if (groupedDelays[type] > biggestDelayValue) {
+                        biggestDelayValue = groupedDelays[type];
+                        biggestDelayType = type;
+                    }
+                });
 
-                let resultHTML = `<div class="border-t-2 border-border dark:border-dark-border pt-8 mt-8 animate-fadeInUp">` + timelineHTML;
-                resultHTML += `<div class="mt-6 p-6 bg-background dark:bg-dark-background rounded-xl animate-fadeInUp" style="animation-delay: ${riders.length * 100}ms">
+                if (riderReachable === "no" && biggestDelayType === "Rider Delay") {
+                    cancellationReason = "Rider Unreachable";
+                } else if (hasMultipleRiders && firstRiderIssue) {
+                    cancellationReason = "Order picked up/delivered by another rider";
+                } else {
+                    cancellationReason = biggestDelayType || "Preparation Delay";
+                }
+
+                let summaryHTML = `<div class="mt-6 p-6 bg-background dark:bg-dark-background rounded-xl animate-fadeInUp">
                     <h5 class="text-xl font-bold font-heading mb-3 text-text-primary dark:text-dark-text-primary">Summary:</h5>`;
-                if (totalDispatchingTime > 0) resultHTML += `<p class="text-text-secondary dark:text-dark-text-secondary">Total Dispatching Time: <span class="font-bold text-text-primary dark:text-dark-text-primary">${totalDispatchingTime} mins</span></p>`;
-                if (delays.length > 0) resultHTML += `<p class="text-text-secondary dark:text-dark-text-secondary">Delays: <span class="font-bold text-text-primary dark:text-dark-text-primary">${delays.join(", ")} mins</span></p>`;
-                resultHTML += `<p class="font-heading font-extrabold mt-4 text-xl"><strong class="text-red-500 dark:text-red-400">Cancellation Reason:</strong> <span id="reasonText" class="text-primary dark:text-dark-primary">${cancellationReason}</span></p>`;
-                resultHTML += `</div></div>`;
-                resultDiv.innerHTML = resultHTML;
+
+                Object.keys(groupedDelays).forEach(type => {
+                    if (groupedDelays[type] > 0) {
+                        const isBiggest = biggestDelayType === type;
+                        summaryHTML += `<p class="text-text-secondary dark:text-dark-text-secondary ${isBiggest ? 'text-red-500 dark:text-red-400 font-bold' : ''}">
+                            ${type}: <span class="font-bold text-text-primary dark:text-dark-text-primary ${isBiggest ? 'text-red-500 dark:text-red-400' : ''}">${groupedDelays[type]} mins</span>
+                        </p>`;
+                    }
+                });
+
+                if (biggestDelayType) {
+                    summaryHTML += `<p class="text-text-secondary dark:text-dark-text-secondary mt-2"><strong>Biggest Delay:</strong> <span class="font-bold text-text-primary dark:text-dark-text-primary">${biggestDelayType} = ${biggestDelayValue} mins</span></p>`;
+                }
+                summaryHTML += `<p class="font-heading font-extrabold mt-4 text-xl"><strong class="text-red-500 dark:text-red-400">Cancellation Reason:</strong> <span id="reasonText" class="text-primary dark:text-dark-primary">${cancellationReason}</span></p></div>`;
+
+                resultDiv.innerHTML = `<div class="border-t-2 border-border dark:border-dark-border pt-8 mt-8 animate-fadeInUp">
+                    <h5 class="text-xl font-bold font-heading mb-4 text-text-primary dark:text-dark-text-primary">Timeline:</h5>
+                    ${timelineHTML}
+                    ${summaryHTML}
+                </div>`;
                 
-                // Show modal with the reason
                 modalReasonText.textContent = cancellationReason;
                 reasonModal.classList.remove('hidden');
             });
