@@ -104,14 +104,14 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: linear-gradient(125deg, #5E56F8, #D946EF, #FBBF24);
-            background-size: 400% 400%;
-            animation: aurora 15s ease infinite;
+            background: linear-gradient(125deg, #5E56F8, #a855f7, #D946EF, #f472b6, #FBBF24, #4ade80);
+            background-size: 1000% 1000%;
+            animation: aurora 30s ease infinite;
             z-index: -2;
-            opacity: 0.05;
+            opacity: 0.1;
         }
         .dark body::before {
-            opacity: 0.1;
+            opacity: 0.15;
         }
 
         .animate-fadeInUp {
@@ -435,7 +435,7 @@
             function getCancellationReason(ridersData, riderReachable, vertical, currentTime) {
                 const BUFFER_TIME = 10;
                 
-                const activeRiders = ridersData.filter(r => r.queued || r.accepted || r.committed);
+                const activeRiders = ridersData.filter(r => r.queued || r.accepted || r.committed || r.pickedup);
 
                 if (activeRiders.length === 0) {
                     return { reason: "Not enough data", explanation: "" };
@@ -448,7 +448,7 @@
                         if (rider.accepted && !rider.pickedup) {
                             return { 
                                 reason: "Order picked up/delivered by another rider", 
-                                explanation: `The issue was with Rider ${i+1}, who was unassigned.` 
+                                explanation: `The issue originated with Rider ${i+1}, who was unassigned.` 
                             };
                         }
                     }
@@ -468,28 +468,37 @@
                 let totalRiderDelay = 0;
 
                 activeRiders.forEach((rider, index) => {
+                    // A. Long Dispatching -> Lack of Delivery Men
                     if (rider.queued && rider.accepted) {
                         totalDispatchingDelay += diffMinutes(rider.queued, rider.accepted);
                     }
+                    
+                    // B. Preparation Delay
+                    // B1. NFV Scheduled
                     if (vertical === 'NFV' && index === 0 && rider.scheduled && rider.queued) {
                         totalPreparationDelay += diffMinutes(rider.scheduled, rider.queued);
                     }
-                    if (rider.pickedup) {
-                        if (rider.nearpickup) {
-                            totalPreparationDelay += diffMinutes(rider.nearpickup, rider.pickedup);
-                        } else if (rider.committed) {
-                            totalPreparationDelay += diffMinutes(rider.committed, rider.pickedup);
+                    // B2. Rider waiting at restaurant for food
+                    if (rider.pickedup && (rider.nearpickup || rider.committed)) {
+                        const arrivalTime = rider.nearpickup || rider.committed;
+                        totalPreparationDelay += diffMinutes(arrivalTime, rider.pickedup);
+                    }
+
+                    // C. Rider Delay
+                    // C1. Rider is late to Pick Up
+                    if (rider.committed && rider.nearpickup) {
+                        const committedMinutes = parseTime(rider.committed);
+                        const nearPickupMinutes = parseTime(rider.nearpickup);
+                        if (nearPickupMinutes > committedMinutes) {
+                            totalRiderDelay += diffMinutes(rider.committed, rider.nearpickup);
                         }
                     }
-                    if (rider.pickedup && rider.dropoff && currentTime) {
+                    // C2. Rider is late to Drop Off (only for the last rider)
+                    if (index === activeRiders.length - 1 && rider.pickedup && rider.dropoff && currentTime) {
                         const dropoffMinutes = parseTime(rider.dropoff);
                         const currentMinutes = parseTime(currentTime);
-                        // CORRECTED LOGIC: Only calculate delay if current time is AFTER estimated dropoff
                         if (currentMinutes > dropoffMinutes) {
-                            const dropOffDelay = diffMinutes(rider.dropoff, currentTime);
-                            if(dropOffDelay > 0) {
-                                totalRiderDelay += dropOffDelay;
-                            }
+                            totalRiderDelay += diffMinutes(rider.dropoff, currentTime);
                         }
                     }
                 });
@@ -507,16 +516,17 @@
                 let maxDelay = 0; 
                 let reason = "Preparation Delay";
                 
-                if (adjustedDispatching > maxDelay) {
-                    maxDelay = adjustedDispatching;
+                // Priority check based on the PDF
+                if (delays["Lack of Delivery Men"] > maxDelay) {
+                    maxDelay = delays["Lack of Delivery Men"];
                     reason = "Lack of Delivery Men";
                 }
-                if (adjustedRider > maxDelay) {
-                    maxDelay = adjustedRider;
+                 if (delays["Late Delivery"] > maxDelay) {
+                    maxDelay = delays["Late Delivery"];
                     reason = "Late Delivery";
                 }
-                if (adjustedPreparation > maxDelay) {
-                    maxDelay = adjustedPreparation;
+                if (delays["Preparation Delay"] > maxDelay) {
+                    maxDelay = delays["Preparation Delay"];
                     reason = "Preparation Delay";
                 }
                 
