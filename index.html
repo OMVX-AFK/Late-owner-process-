@@ -226,7 +226,7 @@
             </div>
             <div class="font-handwriting text-xl text-text-secondary dark:text-dark-text-secondary mt-4 sm:mt-0">
                 <p>made with LOVE</p>
-                <p>BY Omar Mohamed and Adham Mohamed WAVE 41</p>
+                <p>BY Omar Mohamed and Adham Mohamed</p>
             </div>
         </footer>
     </div>
@@ -435,27 +435,31 @@
             function getCancellationReason(ridersData, riderReachable, vertical, currentTime) {
                 const BUFFER_TIME = 10;
                 
-                // Filter out riders with no data to prevent empty cards from causing issues
                 const activeRiders = ridersData.filter(r => r.queued || r.accepted || r.committed);
 
                 if (activeRiders.length === 0) {
-                    return "Not enough data";
+                    return { reason: "Not enough data", explanation: "" };
                 }
 
                 // Rule 1: Multi-Rider Issue
-                // Condition: More than 1 rider AND an earlier rider was unassigned (accepted but never picked up)
                 if (activeRiders.length > 1) {
                     for (let i = 0; i < activeRiders.length - 1; i++) {
                         const rider = activeRiders[i];
                         if (rider.accepted && !rider.pickedup) {
-                            return "Order picked up/delivered by another rider";
+                            return { 
+                                reason: "Order picked up/delivered by another rider", 
+                                explanation: `The issue was with Rider ${i+1}, who was unassigned.` 
+                            };
                         }
                     }
                 }
 
                 // Rule 2: Rider Unreachable
                 if (riderReachable === 'no') {
-                    return "Rider Unreachable";
+                    return { 
+                        reason: "Rider Unreachable", 
+                        explanation: "The rider was marked as unreachable." 
+                    };
                 }
 
                 // Rule 3: Delay Analysis
@@ -464,17 +468,12 @@
                 let totalRiderDelay = 0;
 
                 activeRiders.forEach((rider, index) => {
-                    // A. Long Dispatching -> Lack of Delivery Men
                     if (rider.queued && rider.accepted) {
                         totalDispatchingDelay += diffMinutes(rider.queued, rider.accepted);
                     }
-                    
-                    // B. Preparation Delay
-                    // B1. NFV Scheduled
                     if (vertical === 'NFV' && index === 0 && rider.scheduled && rider.queued) {
                         totalPreparationDelay += diffMinutes(rider.scheduled, rider.queued);
                     }
-                    // B2. Rider waiting at restaurant for food
                     if (rider.pickedup) {
                         if (rider.nearpickup) {
                             totalPreparationDelay += diffMinutes(rider.nearpickup, rider.pickedup);
@@ -482,39 +481,51 @@
                             totalPreparationDelay += diffMinutes(rider.committed, rider.pickedup);
                         }
                     }
-
-                    // C. Rider Delay (Late to Drop Off)
                     if (rider.pickedup && rider.dropoff && currentTime) {
-                        const dropOffDelay = diffMinutes(rider.dropoff, currentTime);
-                        if(dropOffDelay > 0) {
-                            totalRiderDelay += dropOffDelay;
+                        const dropoffMinutes = parseTime(rider.dropoff);
+                        const currentMinutes = parseTime(currentTime);
+                        // CORRECTED LOGIC: Only calculate delay if current time is AFTER estimated dropoff
+                        if (currentMinutes > dropoffMinutes) {
+                            const dropOffDelay = diffMinutes(rider.dropoff, currentTime);
+                            if(dropOffDelay > 0) {
+                                totalRiderDelay += dropOffDelay;
+                            }
                         }
                     }
                 });
 
-                // Apply Buffer Time
                 const adjustedDispatching = Math.max(0, totalDispatchingDelay - BUFFER_TIME);
                 const adjustedPreparation = Math.max(0, totalPreparationDelay - BUFFER_TIME);
                 const adjustedRider = Math.max(0, totalRiderDelay - BUFFER_TIME);
 
-                // Determine reason based on the highest duration after buffer
                 const delays = {
                     "Lack of Delivery Men": adjustedDispatching,
                     "Late Delivery": adjustedRider,
                     "Preparation Delay": adjustedPreparation
                 };
 
-                let maxDelay = -1; 
-                let reason = "Preparation Delay"; // Default if all delays are within buffer
-
-                for (const [key, value] of Object.entries(delays)) {
-                    if (value > maxDelay) {
-                        maxDelay = value;
-                        reason = key;
-                    }
+                let maxDelay = 0; 
+                let reason = "Preparation Delay";
+                
+                if (adjustedDispatching > maxDelay) {
+                    maxDelay = adjustedDispatching;
+                    reason = "Lack of Delivery Men";
+                }
+                if (adjustedRider > maxDelay) {
+                    maxDelay = adjustedRider;
+                    reason = "Late Delivery";
+                }
+                if (adjustedPreparation > maxDelay) {
+                    maxDelay = adjustedPreparation;
+                    reason = "Preparation Delay";
                 }
                 
-                return reason;
+                let explanation = `The highest delay was for ${reason} with a total of ${Math.round(maxDelay)} minutes after the buffer time.`;
+                if (maxDelay <= 0) {
+                    explanation = "No significant delays were found outside the 10-minute buffer time.";
+                }
+
+                return { reason, explanation };
             }
 
 
@@ -536,30 +547,34 @@
                 riders.forEach((rider, index) => {
                     const riderData = {
                         rider: `Rider ${index + 1}`,
-                        queued: rider.querySelector(".queued").value,
-                        accepted: rider.querySelector(".accepted").value,
-                        committed: rider.querySelector(".committed").value,
-                        nearpickup: rider.querySelector(".nearpickup").value,
-                        pickedup: rider.querySelector(".pickedup").value,
-                        dropoff: rider.querySelector(".dropoff").value,
-                        scheduled: (vertical === "NFV" && index === 0) ? rider.querySelector(".scheduled")?.value : null
+                        queued: rider.querySelector(".queued").value.trim(),
+                        accepted: rider.querySelector(".accepted").value.trim(),
+                        committed: rider.querySelector(".committed").value.trim(),
+                        nearpickup: rider.querySelector(".nearpickup").value.trim(),
+                        pickedup: rider.querySelector(".pickedup").value.trim(),
+                        dropoff: rider.querySelector(".dropoff").value.trim(),
+                        scheduled: (vertical === "NFV" && index === 0) ? rider.querySelector(".scheduled")?.value.trim() : null
                     };
                     timelineData.push(riderData);
 
                     // Build the visual timeline simultaneously
-                    timelineHTML += `<div class="bg-background dark:bg-dark-background border-l-4 border-primary dark:border-dark-primary rounded-r-lg p-4 mb-3 animate-fadeInUp" style="animation-delay: ${index * 100}ms">
-                        <strong class="font-bold text-text-primary dark:text-dark-text-primary">Rider ${index + 1}:</strong><br>`;
-                    if (riderData.scheduled) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Scheduled: ${riderData.scheduled}</span><br>`;
-                    if (riderData.queued) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Queued: ${riderData.queued}</span><br>`;
-                    if (riderData.accepted) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Accepted: ${riderData.accepted}</span><br>`;
-                    if (riderData.committed) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Committed Pickup: ${riderData.committed}</span><br>`;
-                    if (riderData.nearpickup) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Near Pickup: ${riderData.nearpickup}</span><br>`;
-                    if (riderData.pickedup) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Picked Up: ${riderData.pickedup}</span><br>`;
-                    if (riderData.dropoff) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Est. Dropoff Departure: ${riderData.dropoff}</span><br>`;
-                    timelineHTML += `</div>`;
+                    if(riderData.queued || riderData.accepted || riderData.committed) {
+                        timelineHTML += `<div class="bg-background dark:bg-dark-background border-l-4 border-primary dark:border-dark-primary rounded-r-lg p-4 mb-3 animate-fadeInUp" style="animation-delay: ${index * 100}ms">
+                            <strong class="font-bold text-text-primary dark:text-dark-text-primary">Rider ${index + 1}:</strong><br>`;
+                        if (riderData.scheduled) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Scheduled: ${riderData.scheduled}</span><br>`;
+                        if (riderData.queued) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Queued: ${riderData.queued}</span><br>`;
+                        if (riderData.accepted) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Accepted: ${riderData.accepted}</span><br>`;
+                        if (riderData.committed) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Committed Pickup: ${riderData.committed}</span><br>`;
+                        if (riderData.nearpickup) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Near Pickup: ${riderData.nearpickup}</span><br>`;
+                        if (riderData.pickedup) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Picked Up: ${riderData.pickedup}</span><br>`;
+                        if (riderData.dropoff) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Est. Dropoff Departure: ${riderData.dropoff}</span><br>`;
+                        timelineHTML += `</div>`;
+                    }
                 });
 
-                const cancellationReason = getCancellationReason(timelineData, riderReachable, vertical, currentTimeInput);
+                const analysisResult = getCancellationReason(timelineData, riderReachable, vertical, currentTimeInput);
+                const cancellationReason = analysisResult.reason;
+                const explanation = analysisResult.explanation;
 
                 // --- DISPLAY RESULTS ---
                 let summaryHTML = `<div class="mt-6 p-6 bg-background dark:bg-dark-background rounded-xl animate-fadeInUp">
@@ -568,6 +583,7 @@
                         <strong class="text-red-500 dark:text-red-400">Cancellation Reason:</strong> 
                         <span id="reasonText" class="text-primary dark:text-dark-primary">${cancellationReason.trim()}</span>
                     </p>
+                    <p class="text-sm text-text-secondary dark:text-dark-text-secondary mt-2">${explanation}</p>
                 </div>`;
 
                 resultDiv.innerHTML = `<div class="border-t-2 border-border dark:border-dark-border pt-8 mt-8 animate-fadeInUp">
@@ -583,4 +599,3 @@
     </script>
 </body>
 </html>
-
