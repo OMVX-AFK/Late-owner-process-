@@ -349,18 +349,17 @@
                 } else {
                     scheduledTimeContainer.classList.add('hidden');
                 }
-                // Reset riders when vertical changes
                 ridersContainer.innerHTML = `<h2 class="text-xl font-bold font-heading text-text-primary dark:text-dark-text-primary mb-4">Rider Timestamps</h2>`;
                 addRider();
             };
 
-            addRider(); // Add the first rider on load
+            addRider();
             document.querySelectorAll('.time-input').forEach(input => {
                 input.addEventListener('input', validateSingleInput);
             });
             addRiderBtn.addEventListener('click', addRider);
             verticalSelect.addEventListener('change', handleVerticalChange);
-            handleVerticalChange(); // Initial check on page load
+            handleVerticalChange();
             
             calculateBtn.addEventListener("click", () => {
                 if (!validateAllInputs()) {
@@ -450,15 +449,6 @@
                 let biggestDelayType = ""; let biggestDelayValue = -1;
                 Object.keys(groupedDelays).forEach(type => { if (groupedDelays[type] > biggestDelayValue) { biggestDelayValue = groupedDelays[type]; biggestDelayType = type; } });
                 
-                let summaryHTML = `<div class="mt-6 p-6 bg-background dark:bg-dark-background rounded-xl animate-fadeInUp">
-                                    <h5 class="text-xl font-bold font-heading mb-3 text-text-primary dark:text-dark-text-primary">Summary:</h5>`;
-                Object.keys(groupedDelays).forEach(type => {
-                    if (groupedDelays[type] > 0) {
-                        summaryHTML += `<p class="text-text-secondary dark:text-dark-text-secondary"><b>${delayMapping[type]}:</b> ${groupedDelays[type]} mins</p>`;
-                    }
-                });
-                summaryHTML += `</div>`;
-
                 let cancellationReason = "";
                 if (biggestDelayValue <= 0) cancellationReason = "No primary delay reason found.";
                 else if (riders.length > 1 && firstRiderIssue) {
@@ -466,6 +456,18 @@
                     if (biggestDelayType === "Rider Delay" && rider2Delay > (groupedDelays["Rider Delay"] / 2)) cancellationReason = "Late Delivery";
                     else cancellationReason = "Picked up by another rider";
                 } else cancellationReason = delayMapping[biggestDelayType] || "N/A";
+
+                let summaryHTML = `<div class="mt-6 p-6 bg-background dark:bg-dark-background rounded-xl animate-fadeInUp">
+                                    <h5 class="text-xl font-bold font-heading mb-3 text-text-primary dark:text-dark-text-primary">Summary:</h5>`;
+                Object.keys(groupedDelays).forEach(type => {
+                    // MODIFIED LOGIC: Don't show Preparation Delay if the reason is "Picked up by another rider"
+                    const shouldShow = !(cancellationReason === "Picked up by another rider" && type === "Preparation Delay");
+                    if (groupedDelays[type] > 0 && shouldShow) {
+                        summaryHTML += `<p class="text-text-secondary dark:text-dark-text-secondary"><b>${delayMapping[type]}:</b> ${groupedDelays[type]} mins</p>`;
+                    }
+                });
+
+                summaryHTML += `<p class="font-heading font-extrabold mt-4 text-xl"><strong class="text-red-500 dark:text-red-400">Cancellation Reason:</strong> <span class="text-primary dark:text-dark-primary">${cancellationReason}</span></p></div>`;
                 
                 resultDiv.innerHTML = `<div class="border-t-2 border-border dark:border-dark-border pt-8 mt-8 animate-fadeInUp"><h5 class="text-xl font-bold font-heading mb-3 text-text-primary dark:text-dark-text-primary">Timeline:</h5>${timelineHTML}</div>` + summaryHTML;
                 
