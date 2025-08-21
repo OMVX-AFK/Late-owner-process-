@@ -334,7 +334,7 @@
                 themeToggleBtn.style.transform = `rotate(${newTheme === 'dark' ? 180 : 0}deg)`;
             });
 
-            // --- APPLICATION LOGIC (REVERTED TO PURE JS LOGIC) ---
+            // --- APPLICATION LOGIC (UPDATED WITH NEW LOGIC) ---
             const addRiderBtn = document.getElementById('addRiderBtn');
             const calculateBtn = document.getElementById('calculateBtn');
             const ridersContainer = document.getElementById('ridersContainer');
@@ -347,35 +347,36 @@
 
             closeReasonModalBtn.addEventListener('click', () => reasonModal.classList.add('hidden'));
             
-            // --- TIME PARSING AND CALCULATION FUNCTIONS ---
-            function parseTime(timeStr) {
-                if (!timeStr) return null;
-                let parts = timeStr.trim().split(" ");
-                let timePart = parts[0];
-                let ampm = parts[1] ? parts[1].toUpperCase() : null;
-                let [h, m, s] = timePart.split(":").map(Number);
-                if (isNaN(s)) s = 0;
-                if (ampm === "PM" && h < 12) h += 12;
-                if (ampm === "AM" && h === 12) h = 0;
-                return h * 60 + m + (s / 60);
+            function diffMinutes(startTime, endTime) {
+                const today = new Date();
+                if (!startTime || !endTime) return 0;
+                const [startHourMin, startPeriod] = startTime.split(' ');
+                const [endHourMin, endPeriod] = endTime.split(' ');
+                if (!startHourMin || !startPeriod || !endHourMin || !endPeriod) return 0;
+                let [startHour, startMin] = startHourMin.split(':').map(Number);
+                let [endHour, endMin] = endHourMin.split(':').map(Number);
+                if (isNaN(startHour) || isNaN(startMin) || isNaN(endHour) || isNaN(endMin)) return 0;
+                if (startPeriod.toUpperCase() === 'PM' && startHour !== 12) startHour += 12;
+                if (startPeriod.toUpperCase() === 'AM' && startHour === 12) startHour = 0;
+                if (endPeriod.toUpperCase() === 'PM' && endHour !== 12) endHour += 12;
+                if (endPeriod.toUpperCase() === 'AM' && endHour === 12) endHour = 0;
+                const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), startHour, startMin);
+                const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), endHour, endMin);
+                return Math.floor((endDate - startDate) / 60000);
             }
-
-            function diffMinutes(start, end) {
-                let startMinutes = parseTime(start);
-                let endMinutes = parseTime(end);
-                if (startMinutes == null || endMinutes == null || isNaN(startMinutes) || isNaN(endMinutes)) return 0;
-                if (endMinutes < startMinutes) endMinutes += 24 * 60; // Handle overnight
-                return Math.round(endMinutes - startMinutes);
-            }
-
-            // --- VALIDATION ---
+            
+            // --- VALIDATION (RESTORED) ---
             function validateAllInputs() {
                 let allValid = true;
                 document.querySelectorAll('.time-input').forEach(input => {
-                    const parsed = parseTime(input.value);
-                    if (input.value.trim() !== '' && (parsed === null || isNaN(parsed))) {
-                        input.classList.add('invalid');
-                        allValid = false;
+                    if (input.value.trim() !== '') {
+                        const timeParts = input.value.split(' ');
+                        if (timeParts.length !== 2 || !/^\d{1,2}:\d{2}$/.test(timeParts[0]) || !/^(AM|PM)$/i.test(timeParts[1])) {
+                             input.classList.add('invalid');
+                             allValid = false;
+                        } else {
+                            input.classList.remove('invalid');
+                        }
                     } else {
                         input.classList.remove('invalid');
                     }
@@ -384,19 +385,18 @@
             }
 
             const validateSingleInput = (e) => {
-                 const parsed = parseTime(e.target.value);
-                 if (e.target.value.trim() !== '' && (parsed === null || isNaN(parsed))) {
-                    e.target.classList.add('invalid');
+                 if (e.target.value.trim() !== '') {
+                    const timeParts = e.target.value.split(' ');
+                    if (timeParts.length !== 2 || !/^\d{1,2}:\d{2}$/.test(timeParts[0]) || !/^(AM|PM)$/i.test(timeParts[1])) {
+                        e.target.classList.add('invalid');
+                    } else {
+                        e.target.classList.remove('invalid');
+                    }
                 } else {
                     e.target.classList.remove('invalid');
                 }
             }
-            
-            document.querySelectorAll('.time-input').forEach(input => {
-                input.addEventListener('input', validateSingleInput);
-            });
 
-            // --- EVENT LISTENERS ---
             const addRider = () => {
                 const newRiderNode = riderTemplate.firstElementChild.cloneNode(true);
                 const riderCount = ridersContainer.querySelectorAll('.rider-card').length + 1;
@@ -424,6 +424,9 @@
             };
 
             addRider(); 
+            document.querySelectorAll('.time-input').forEach(input => {
+                input.addEventListener('input', validateSingleInput);
+            });
             addRiderBtn.addEventListener('click', addRider);
             
             verticalSelect.addEventListener('change', () => {
@@ -431,179 +434,153 @@
                 addRider();
             });
             
-            // --- NEW DETERMINISTIC CALCULATION LOGIC BASED ON PDF ---
-            function getCancellationReason(ridersData, riderReachable, vertical, currentTime) {
-                const BUFFER_TIME = 10;
-                
-                const activeRiders = ridersData.filter(r => r.queued || r.accepted || r.committed || r.pickedup);
-
-                if (activeRiders.length === 0) {
-                    return { reason: "Not enough data", explanation: "" };
-                }
-
-                // Rule 1: Multi-Rider Issue
-                if (activeRiders.length > 1) {
-                    for (let i = 0; i < activeRiders.length - 1; i++) {
-                        const rider = activeRiders[i];
-                        if (rider.accepted && !rider.pickedup) {
-                            return { 
-                                reason: "Order picked up/delivered by another rider", 
-                                explanation: `The issue originated with Rider ${i+1}, who was unassigned.` 
-                            };
-                        }
-                    }
-                }
-
-                // Rule 2: Rider Unreachable
-                if (riderReachable === 'no') {
-                    return { 
-                        reason: "Rider Unreachable", 
-                        explanation: "The rider was marked as unreachable." 
-                    };
-                }
-
-                // Rule 3: Delay Analysis
-                let totalDispatchingDelay = 0;
-                let totalPreparationDelay = 0;
-                let totalRiderDelay = 0;
-
-                activeRiders.forEach((rider, index) => {
-                    // A. Long Dispatching -> Lack of Delivery Men
-                    if (rider.queued && rider.accepted) {
-                        totalDispatchingDelay += diffMinutes(rider.queued, rider.accepted);
-                    }
-                    
-                    // B. Preparation Delay
-                    // B1. NFV Scheduled
-                    if (vertical === 'NFV' && index === 0 && rider.scheduled && rider.queued) {
-                        totalPreparationDelay += diffMinutes(rider.scheduled, rider.queued);
-                    }
-                    // B2. Rider waiting at restaurant for food
-                    if (rider.pickedup && (rider.nearpickup || rider.committed)) {
-                        const arrivalTime = rider.nearpickup || rider.committed;
-                        totalPreparationDelay += diffMinutes(arrivalTime, rider.pickedup);
-                    }
-
-                    // C. Rider Delay
-                    // C1. Rider is late to Pick Up
-                    if (rider.committed && rider.nearpickup) {
-                        const committedMinutes = parseTime(rider.committed);
-                        const nearPickupMinutes = parseTime(rider.nearpickup);
-                        if (nearPickupMinutes > committedMinutes) {
-                            totalRiderDelay += diffMinutes(rider.committed, rider.nearpickup);
-                        }
-                    }
-                    // C2. Rider is late to Drop Off (only for the last rider)
-                    if (index === activeRiders.length - 1 && rider.pickedup && rider.dropoff && currentTime) {
-                        const dropoffMinutes = parseTime(rider.dropoff);
-                        const currentMinutes = parseTime(currentTime);
-                        if (currentMinutes > dropoffMinutes) {
-                            totalRiderDelay += diffMinutes(rider.dropoff, currentTime);
-                        }
-                    }
-                });
-
-                const adjustedDispatching = Math.max(0, totalDispatchingDelay - BUFFER_TIME);
-                const adjustedPreparation = Math.max(0, totalPreparationDelay - BUFFER_TIME);
-                const adjustedRider = Math.max(0, totalRiderDelay - BUFFER_TIME);
-
-                const delays = {
-                    "Lack of Delivery Men": adjustedDispatching,
-                    "Late Delivery": adjustedRider,
-                    "Preparation Delay": adjustedPreparation
-                };
-
-                let maxDelay = 0; 
-                let reason = "Preparation Delay";
-                
-                // Priority check based on the PDF
-                if (delays["Lack of Delivery Men"] > maxDelay) {
-                    maxDelay = delays["Lack of Delivery Men"];
-                    reason = "Lack of Delivery Men";
-                }
-                 if (delays["Late Delivery"] > maxDelay) {
-                    maxDelay = delays["Late Delivery"];
-                    reason = "Late Delivery";
-                }
-                if (delays["Preparation Delay"] > maxDelay) {
-                    maxDelay = delays["Preparation Delay"];
-                    reason = "Preparation Delay";
-                }
-                
-                let explanation = `The highest delay was for ${reason} with a total of ${Math.round(maxDelay)} minutes after the buffer time.`;
-                if (maxDelay <= 0) {
-                    explanation = "No significant delays were found outside the 10-minute buffer time.";
-                }
-
-                return { reason, explanation };
-            }
-
-
             calculateBtn.addEventListener("click", () => {
-                resultDiv.innerHTML = '';
                 if (!validateAllInputs()) {
                     resultDiv.innerHTML = `<div class="p-4 text-red-700 bg-red-100 border-l-4 border-red-500 rounded-r-lg animate-fadeInUp"><p class="font-bold">Validation Error</p><p>Please correct the highlighted time formats (e.g., 5:30 PM).</p></div>`;
                     return;
                 }
 
-                const vertical = verticalSelect.value;
+                const vertical = document.getElementById("vertical").value;
                 const riders = document.querySelectorAll(".rider-card");
-                const riderReachable = document.getElementById("riderReachable").value;
                 const currentTimeInput = document.getElementById("currentTime").value;
-                
-                let timelineData = [];
-                let timelineHTML = "";
+                let groupedDelays = { "Dispatching Delay": 0, "Rider Delay": 0, "Preparation Delay": 0 };
+                let timelineHTML = "<h5>Timeline:</h5>";
+                let firstRiderIssue = false;
 
                 riders.forEach((rider, index) => {
-                    const riderData = {
-                        rider: `Rider ${index + 1}`,
-                        queued: rider.querySelector(".queued").value.trim(),
-                        accepted: rider.querySelector(".accepted").value.trim(),
-                        committed: rider.querySelector(".committed").value.trim(),
-                        nearpickup: rider.querySelector(".nearpickup").value.trim(),
-                        pickedup: rider.querySelector(".pickedup").value.trim(),
-                        dropoff: rider.querySelector(".dropoff").value.trim(),
-                        scheduled: (vertical === "NFV" && index === 0) ? rider.querySelector(".scheduled")?.value.trim() : null
-                    };
-                    timelineData.push(riderData);
+                    const queued = rider.querySelector(".queued")?.value;
+                    const accepted = rider.querySelector(".accepted")?.value;
+                    const committed = rider.querySelector(".committed")?.value;
+                    const nearpickup = rider.querySelector(".nearpickup")?.value;
+                    const pickedup = rider.querySelector(".pickedup")?.value;
+                    const dropoff = rider.querySelector(".dropoff")?.value;
+                    let scheduled = vertical === "NFV" && index === 0 ? rider.querySelector(".scheduled")?.value : null;
 
-                    // Build the visual timeline simultaneously
-                    if(riderData.queued || riderData.accepted || riderData.committed) {
-                        timelineHTML += `<div class="bg-background dark:bg-dark-background border-l-4 border-primary dark:border-dark-primary rounded-r-lg p-4 mb-3 animate-fadeInUp" style="animation-delay: ${index * 100}ms">
-                            <strong class="font-bold text-text-primary dark:text-dark-text-primary">Rider ${index + 1}:</strong><br>`;
-                        if (riderData.scheduled) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Scheduled: ${riderData.scheduled}</span><br>`;
-                        if (riderData.queued) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Queued: ${riderData.queued}</span><br>`;
-                        if (riderData.accepted) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Accepted: ${riderData.accepted}</span><br>`;
-                        if (riderData.committed) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Committed Pickup: ${riderData.committed}</span><br>`;
-                        if (riderData.nearpickup) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Near Pickup: ${riderData.nearpickup}</span><br>`;
-                        if (riderData.pickedup) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Picked Up: ${riderData.pickedup}</span><br>`;
-                        if (riderData.dropoff) timelineHTML += `<span class="text-text-secondary dark:text-dark-text-secondary">Est. Dropoff Departure: ${riderData.dropoff}</span><br>`;
-                        timelineHTML += `</div>`;
+                    timelineHTML += `<div class="bg-background dark:bg-dark-background border-l-4 border-primary dark:border-dark-primary rounded-r-lg p-4 mb-3 animate-fadeInUp"><b>Rider ${index + 1}:</b><br>`;
+                    if (scheduled) timelineHTML += `Scheduled: ${scheduled} | `;
+                    if (queued) timelineHTML += `Queued: ${queued} | `;
+                    if (accepted) timelineHTML += `Accepted: ${accepted} | `;
+                    if (committed) timelineHTML += `Committed Pickup: ${committed} | `;
+                    if (nearpickup) timelineHTML += `Near Pickup: ${nearpickup} | `;
+                    if (pickedup) timelineHTML += `Picked Up: ${pickedup} | `;
+                    if (dropoff) timelineHTML += `Est. Dropoff Departure: ${dropoff} | `;
+
+                    // Dispatching Delay
+                    if (queued && accepted) {
+                        let dispatchTime = diffMinutes(queued, accepted);
+                        groupedDelays["Dispatching Delay"] += dispatchTime;
+                        if (vertical === "NFV" && scheduled) {
+                            let prepTime = diffMinutes(scheduled, queued);
+                            if (prepTime > 0) groupedDelays["Preparation Delay"] += prepTime;
+                        }
+                    }
+
+                    // Preparation & Rider Delay
+                    let riderDelay = 0, prepDelay = 0;
+                    if (committed) {
+                        if (nearpickup) {
+                            let delta = diffMinutes(committed, nearpickup);
+                            if (delta > 0) {
+                                riderDelay = delta; // Rider arrived late → Rider Delay
+                                if (pickedup) {
+                                    prepDelay = diffMinutes(nearpickup, pickedup); // Prep delay is after rider arrives
+                                }
+                            } else {
+                                // Rider arrived early or on time → Preparation Delay is from committed time
+                                if (pickedup) {
+                                    prepDelay = diffMinutes(committed, pickedup);
+                                } else if (currentTimeInput) {
+                                    prepDelay = diffMinutes(committed, currentTimeInput);
+                                }
+                            }
+                        } else if (pickedup) {
+                            prepDelay = diffMinutes(committed, pickedup);
+                        } else if (!pickedup && currentTimeInput) {
+                            prepDelay = diffMinutes(committed, currentTimeInput);
+                        }
+                    }
+
+                    // Rider ongoing delay from Picked Up → Current Time
+                    if (pickedup && currentTimeInput) {
+                        let ongoingDelay = diffMinutes(pickedup, currentTimeInput);
+                        if (ongoingDelay > 0) {
+                            riderDelay += ongoingDelay;
+                        }
+                    }
+
+                    groupedDelays["Rider Delay"] += riderDelay;
+                    groupedDelays["Preparation Delay"] += prepDelay;
+
+                    if (riderDelay > 0) timelineHTML += `<span style="color:red;">Rider Delay: ${riderDelay} mins</span> | `;
+                    if (prepDelay > 0) timelineHTML += `<span style="color:orange;">Preparation Delay: ${prepDelay} mins</span> | `;
+
+                    // Driving Time
+                    if (dropoff && pickedup) {
+                        let driving = diffMinutes(pickedup, dropoff);
+                        if (driving >= 0) timelineHTML += `<span>Driving Time: ${driving} mins</span> | `;
+                    }
+
+                    // Extra Rider Delay between riders
+                    if (riders.length > 1 && index === 0) {
+                        const nextRider = riders[1];
+                        const nextAssignedTime = nextRider.querySelector(".queued")?.value || nextRider.querySelector(".accepted")?.value;
+                        const lastTimeFirstRider = pickedup || nearpickup || committed || accepted || queued;
+                        if (lastTimeFirstRider && nextAssignedTime) {
+                            let extraDelay = diffMinutes(lastTimeFirstRider, nextAssignedTime);
+                            if (extraDelay > 0) {
+                                groupedDelays["Rider Delay"] += extraDelay;
+                                timelineHTML += `<span style="color:red;">Extra Rider Delay before second rider: ${extraDelay} mins</span> | `;
+                            }
+                        }
+                    }
+
+                    if (index === 0 && ((accepted && !pickedup) || (queued && !accepted))) {
+                        firstRiderIssue = true;
+                        timelineHTML += `<span style="color:red;"><b>Issue detected with Rider 1</b></span> | `;
+                    }
+
+                    timelineHTML += `</div>`;
+                });
+
+                const delayMapping = { "Dispatching Delay": "Lack of Delivery Men", "Rider Delay": "Late Delivery", "Preparation Delay": "Preparation Delay" };
+
+                let biggestDelayType = "";
+                let biggestDelayValue = 0;
+                Object.keys(groupedDelays).forEach(type => {
+                    if (groupedDelays[type] > biggestDelayValue) {
+                        biggestDelayValue = groupedDelays[type];
+                        biggestDelayType = type;
                     }
                 });
 
-                const analysisResult = getCancellationReason(timelineData, riderReachable, vertical, currentTimeInput);
-                const cancellationReason = analysisResult.reason;
-                const explanation = analysisResult.explanation;
-
-                // --- DISPLAY RESULTS ---
-                let summaryHTML = `<div class="mt-6 p-6 bg-background dark:bg-dark-background rounded-xl animate-fadeInUp">
-                    <h5 class="text-xl font-bold font-heading mb-3 text-text-primary dark:text-dark-text-primary">Analysis Complete:</h5>
-                    <p class="font-heading font-extrabold mt-4 text-xl">
-                        <strong class="text-red-500 dark:text-red-400">Cancellation Reason:</strong> 
-                        <span id="reasonText" class="text-primary dark:text-dark-primary">${cancellationReason.trim()}</span>
-                    </p>
-                    <p class="text-sm text-text-secondary dark:text-dark-text-secondary mt-2">${explanation}</p>
-                </div>`;
-
-                resultDiv.innerHTML = `<div class="border-t-2 border-border dark:border-dark-border pt-8 mt-8 animate-fadeInUp">
-                    <h5 class="text-xl font-bold font-heading mb-4 text-text-primary dark:text-dark-text-primary">Timeline:</h5>
-                    ${timelineHTML}
-                    ${summaryHTML}
-                </div>`;
+                let resultHTML = `<div class="border-t-2 border-border dark:border-dark-border pt-8 mt-8 animate-fadeInUp">${timelineHTML}</div>`;
                 
-                modalReasonText.textContent = cancellationReason.trim();
-                reasonModal.classList.remove('hidden');
+                let summaryHTML = `<div class="mt-6 p-6 bg-background dark:bg-dark-background rounded-xl animate-fadeInUp">
+                                    <h5 class="text-xl font-bold font-heading mb-3 text-text-primary dark:text-dark-text-primary">Summary:</h5>`;
+
+                Object.keys(groupedDelays).forEach(type => {
+                    if (groupedDelays[type] > 0) {
+                        summaryHTML += `<p class="text-text-secondary dark:text-dark-text-secondary"><b>${delayMapping[type]}:</b> ${groupedDelays[type]} mins</p>`;
+                    }
+                });
+
+                // Determine cancellation reason
+                let cancellationReason = "";
+                if (riders.length > 1) {
+                    if (firstRiderIssue) {
+                        cancellationReason = "Order picked up/delivered by another rider";
+                    } else if (biggestDelayType === "Rider Delay") {
+                        cancellationReason = "Late Delivery";
+                    } else {
+                        cancellationReason = delayMapping[biggestDelayType] || "Preparation Delay";
+                    }
+                } else {
+                    cancellationReason = delayMapping[biggestDelayType] || "Preparation Delay";
+                }
+                
+                summaryHTML += `<p class="font-heading font-extrabold mt-4 text-xl"><strong class="text-red-500 dark:text-red-400">Cancellation Reason:</strong> <span class="text-primary dark:text-dark-primary">${cancellationReason}</span></p></div>`;
+                
+                resultDiv.innerHTML = resultHTML + summaryHTML;
             });
         });
     </script>
