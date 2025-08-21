@@ -1,592 +1,478 @@
-    <!DOCTYPE html>
-    <html lang="en" class="light"> <!-- Default to light mode -->
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Late Owner Process</title>
-        <!-- Tailwind CSS -->
-        <script src="https://cdn.tailwindcss.com"></script>
-        <!-- Google Fonts: Poppins for headings, Lato for body, Caveat for handwriting -->
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Lato:wght@400;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
-        <!-- Three.js for 3D background -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-        <script>
-            // Custom Tailwind configuration for the new theme
-            tailwind.config = {
-                darkMode: 'class',
-                theme: {
-                    extend: {
-                        fontFamily: {
-                            'sans': ['Lato', 'sans-serif'],
-                            'heading': ['Poppins', 'sans-serif'],
-                            'handwriting': ['Caveat', 'cursive'],
-                        },
-                        colors: {
-                            // Light Mode Palette
-                            'primary': '#5E56F8',
-                            'primary-hover': '#4338ca',
-                            'secondary': '#1A202C',
-                            'secondary-hover': '#2D3748',
-                            'background': '#F7F8FC',
-                            'card': 'rgba(255, 255, 255, 0.8)', // Slightly transparent for glass effect
-                            'text-primary': '#1A202C',
-                            'text-secondary': '#718096',
-                            'border': '#E2E8F0',
-                            // Dark Mode Palette
-                            'dark-primary': '#7F7AFF',
-                            'dark-primary-hover': '#9592FF',
-                            'dark-secondary': '#E2E8F0',
-                            'dark-secondary-hover': '#F7FAFC',
-                            'dark-background': '#121212',
-                            'dark-card': 'rgba(26, 26, 26, 0.7)', // Slightly transparent for glass effect
-                            'dark-text-primary': '#F7FAFC',
-                            'dark-text-secondary': '#A0AEC0',
-                            'dark-border': '#2D3748',
-                        }
+<!DOCTYPE html>
+<html lang="en" class="light"> <!-- Default to light mode -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Late Owner Process</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Poppins for headings, Lato for body, Caveat for handwriting -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Lato:wght@400;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+    <!-- Three.js for 3D background -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Custom Tailwind configuration for the new theme
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Lato', 'sans-serif'],
+                        'heading': ['Poppins', 'sans-serif'],
+                        'handwriting': ['Caveat', 'cursive'],
+                    },
+                    colors: {
+                        // Light Mode Palette
+                        'primary': '#5E56F8',
+                        'primary-hover': '#4338ca',
+                        'secondary': '#1A202C',
+                        'secondary-hover': '#2D3748',
+                        'background': '#F7F8FC',
+                        'card': 'rgba(255, 255, 255, 0.8)',
+                        'text-primary': '#1A202C',
+                        'text-secondary': '#718096',
+                        'border': '#E2E8F0',
+                        // Dark Mode Palette
+                        'dark-primary': '#7F7AFF',
+                        'dark-primary-hover': '#9592FF',
+                        'dark-secondary': '#E2E8F0',
+                        'dark-secondary-hover': '#F7FAFC',
+                        'dark-background': '#121212',
+                        'dark-card': 'rgba(26, 26, 26, 0.7)',
+                        'dark-text-primary': '#F7FAFC',
+                        'dark-text-secondary': '#A0AEC0',
+                        'dark-border': '#2D3748',
                     }
                 }
             }
-        </script>
-        <style>
-            /* Base styles and dynamic effects */
-            @keyframes fadeInUp {
-                from { opacity: 0; transform: translateY(20px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            @keyframes modal-scale-in {
-                from { opacity: 0; transform: scale(0.95) translateY(10px); }
-                to { opacity: 1; transform: scale(1) translateY(0); }
-            }
-            @keyframes glow {
-                0% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-                100% { background-position: 0% 50%; }
-            }
-            @keyframes aurora {
-                0% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-                100% { background-position: 0% 50%; }
-            }
-            @keyframes pulse-glow {
-                0%, 100% { box-shadow: 0 0 15px 0px rgba(94, 86, 248, 0.4); }
-                50% { box-shadow: 0 0 30px 5px rgba(94, 86, 248, 0.6); }
-            }
-            .dark .logo-glow {
-                animation-name: pulse-glow-dark;
-            }
-            @keyframes pulse-glow-dark {
-                0%, 100% { box-shadow: 0 0 15px 0px rgba(127, 122, 255, 0.4); }
-                50% { box-shadow: 0 0 30px 5px rgba(127, 122, 255, 0.6); }
-            }
-            /* Shake animation for invalid inputs */
-            @keyframes shake {
-                10%, 90% { transform: translate3d(-1px, 0, 0); }
-                20%, 80% { transform: translate3d(2px, 0, 0); }
-                30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-                40%, 60% { transform: translate3d(4px, 0, 0); }
-            }
+        }
+    </script>
+    <style>
+        /* Base styles and dynamic effects */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes modal-scale-in { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes glow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes aurora { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 15px 0px rgba(94, 86, 248, 0.4); } 50% { box-shadow: 0 0 30px 5px rgba(94, 86, 248, 0.6); } }
+        .dark .logo-glow { animation-name: pulse-glow-dark; }
+        @keyframes pulse-glow-dark { 0%, 100% { box-shadow: 0 0 15px 0px rgba(127, 122, 255, 0.4); } 50% { box-shadow: 0 0 30px 5px rgba(127, 122, 255, 0.6); } }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
 
-            #bg-canvas {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                z-index: -1;
-            }
+        #bg-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; }
 
-            body::before {
-                content: '';
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                background: linear-gradient(125deg, #5E56F8, #a855f7, #D946EF, #f472b6, #FBBF24, #4ade80);
-                background-size: 1000% 1000%;
-                animation: aurora 30s ease infinite;
-                z-index: -2;
-                opacity: 0.1;
-            }
-            .dark body::before {
-                opacity: 0.15;
-            }
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(125deg, #5E56F8, #a855f7, #D946EF, #f472b6, #FBBF24, #4ade80);
+            background-size: 1000% 1000%; animation: aurora 30s ease infinite; z-index: -2; opacity: 0.1;
+        }
+        .dark body::before { opacity: 0.15; }
 
-            .animate-fadeInUp {
-                animation: fadeInUp 0.6s ease-out forwards;
-            }
-            .modal-content {
-                animation: modal-scale-in 0.3s ease-out forwards;
-            }
-            .form-input {
-                transition: all 0.2s ease-in-out;
-            }
-            .form-input.invalid {
-                border-color: #ef4444 !important;
-                box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.5) !important;
-                animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
-            }
-            .btn-glow {
-                position: relative;
-                overflow: hidden;
-            }
-            .btn-glow:hover {
-                box-shadow: 0 0 25px 0 rgba(94, 86, 248, 0.6);
-            }
-            .dark .btn-glow:hover {
-                box-shadow: 0 0 25px 0 rgba(127, 122, 255, 0.6);
-            }
-            .glowing-line {
-                height: 3px;
-                width: 150px;
-                background: linear-gradient(90deg, transparent, #5E56F8, #D946EF, #5E56F8, transparent);
-                background-size: 200% 100%;
-                animation: glow 4s linear infinite;
-            }
-            .dark .glowing-line {
-                background: linear-gradient(90deg, transparent, #7F7AFF, #F472B6, #7F7AFF, transparent);
-                background-size: 200% 100%;
-            }
-            .glass-card {
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-            }
-            .logo-glow {
-                border-radius: 9999px;
-                animation: pulse-glow 4s infinite ease-in-out;
-            }
-        </style>
-    </head>
-    <body class="bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary font-sans antialiased">
+        .animate-fadeInUp { animation: fadeInUp 0.6s ease-out forwards; }
+        .modal-content { animation: modal-scale-in 0.3s ease-out forwards; }
+        .form-input { transition: all 0.2s ease-in-out; }
+        .form-input.invalid {
+            border-color: #ef4444 !important; box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.5) !important;
+            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        .btn-glow { position: relative; overflow: hidden; }
+        .btn-glow:hover { box-shadow: 0 0 25px 0 rgba(94, 86, 248, 0.6); }
+        .dark .btn-glow:hover { box-shadow: 0 0 25px 0 rgba(127, 122, 255, 0.6); }
+        .glowing-line {
+            height: 3px; width: 150px;
+            background: linear-gradient(90deg, transparent, #5E56F8, #D946EF, #5E56F8, transparent);
+            background-size: 200% 100%; animation: glow 4s linear infinite;
+        }
+        .dark .glowing-line { background: linear-gradient(90deg, transparent, #7F7AFF, #F472B6, #7F7AFF, transparent); background-size: 200% 100%; }
+        .glass-card { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .logo-glow { border-radius: 9999px; animation: pulse-glow 4s infinite ease-in-out; }
+    </style>
+</head>
+<body class="bg-background text-text-primary dark:bg-dark-background dark:text-dark-text-primary font-sans antialiased">
 
-        <canvas id="bg-canvas"></canvas>
+    <canvas id="bg-canvas"></canvas>
 
-        <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl relative z-10">
-            
-            <header class="relative flex flex-col justify-center items-center mb-8 sm:mb-12 animate-fadeInUp" style="animation-delay: 100ms;">
-                <div class="logo-glow sm:absolute sm:top-0 sm:left-0 mb-4 sm:mb-0">
-                    <img src="https://i.ibb.co/TxmWmdRd/image.png" alt="Primary Logo" class="h-16 w-16">
-                </div>
-                <div class="text-center">
-                    <h1 class="text-3xl sm:text-4xl font-extrabold font-heading text-text-primary dark:text-dark-text-primary tracking-tight">
-                        Late Owner Process
-                    </h1>
-                    <div class="glowing-line mt-3 mx-auto"></div>
-                </div>
-                <button id="theme-toggle" class="absolute top-0 right-0 p-2 rounded-full text-text-secondary dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-dark-primary transition-transform duration-300">
-                    <svg id="theme-toggle-light-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <svg id="theme-toggle-dark-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                </button>
-            </header>
-
-            <main class="bg-card dark:bg-dark-card p-6 sm:p-10 rounded-2xl shadow-2xl glass-card animate-fadeInUp" style="animation-delay: 200ms;">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 pb-8 border-b border-border dark:border-dark-border">
-                    <div>
-                        <label for="vertical" class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary mb-2">Business Vertical</label>
-                        <select id="vertical" class="w-full p-3 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-lg shadow-sm focus:ring-primary dark:focus:ring-dark-primary form-input">
-                            <option>FV</option> <option>NFV</option> <option>TMart</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="riderReachable" class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary mb-2">Rider Status</label>
-                        <select id="riderReachable" class="w-full p-3 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-lg shadow-sm focus:ring-primary dark:focus:ring-dark-primary form-input">
-                            <option value="yes">Reachable</option> <option value="no">Unreachable</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="currentTime" class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary mb-2">Current Time</label>
-                        <input type="text" id="currentTime" placeholder="0:00 AM/PM" class="form-input w-full p-3 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-lg shadow-sm focus:ring-primary dark:focus:ring-dark-primary time-input">
-                    </div>
-                </div>
-
-                <div id="ridersContainer" class="mb-6">
-                    <h2 class="text-xl font-bold font-heading text-text-primary dark:text-dark-text-primary mb-4">Rider Timestamps</h2>
-                </div>
-
-                <div class="flex flex-col sm:flex-row gap-4 mt-10">
-                    <button id="addRiderBtn" class="w-full sm:w-auto flex-grow flex items-center justify-center gap-2 bg-secondary dark:bg-dark-secondary hover:bg-secondary-hover dark:hover:bg-dark-secondary-hover text-white dark:text-dark-background font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:-translate-y-1 active:translate-y-0">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" /></svg>
-                        Add Rider
-                    </button>
-                    <button id="calculateBtn" class="w-full sm:w-auto flex-grow flex items-center justify-center gap-2 bg-primary dark:bg-dark-primary hover:bg-primary-hover dark:hover:bg-dark-primary-hover text-white font-bold py-3 px-6 rounded-lg shadow-lg btn-glow transition-transform transform hover:-translate-y-1 active:translate-y-0">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M4 2a1 1 0 00-1 1v1H2a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H5V3a1 1 0 00-1-1zM2 8v8h16V8H2z"></path></svg>
-                        Analyze Reason
-                    </button>
-                </div>
-
-                <div id="result" class="mt-12"></div>
-            </main>
-
-            <footer class="flex flex-col sm:flex-row items-center justify-between mt-10 text-center animate-fadeInUp" style="animation-delay: 300ms;">
-                <div class="logo-glow">
-                    <img src="https://i.ibb.co/WvcTtbST/image.png" alt="Secondary Logo" class="h-10">
-                </div>
-                <div class="font-handwriting text-xl text-text-secondary dark:text-dark-text-secondary mt-4 sm:mt-0">
-                    <p>made with LOVE</p>
-                    <p>BY Omar Mohamed and Adham Mohamed</p>
-                </div>
-            </footer>
-        </div>
-
-        <!-- Hidden Rider Template -->
-        <div id="riderTemplate" class="hidden">
-            <div class="rider-card rider p-5 mb-4 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-xl relative animate-fadeInUp transition-all duration-300 hover:border-primary dark:hover:border-dark-primary hover:shadow-lg hover:-translate-y-1">
-                <button class="remove-rider-btn absolute -top-3 -right-3 w-7 h-7 flex items-center justify-center bg-red-500 text-white rounded-full font-bold text-lg hover:bg-red-600 transform hover:scale-110 transition-transform" title="Remove Rider">&times;</button>
-                <h3 class="font-bold font-heading text-lg mb-4 text-primary dark:text-dark-primary">Rider</h3>
-                <div class="rider-fields grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Queued Time <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md queued"></label></div>
-                    <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Accepted Time <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md accepted"></label></div>
-                    <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Committed Pickup <input type="text" placeholder="00:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md committed"></label></div>
-                    <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Near Pickup <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md nearpickup"></label></div>
-                    <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Picked Up <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md pickedup"></label></div>
-                    <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Est. Dropoff <input type="text" placeholder="00:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md dropoff"></label></div>
-                </div>
-            </div>
-        </div>
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl relative z-10">
         
-        <!-- Cancellation Reason Modal -->
-        <div id="reasonModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
-            <div class="modal-content bg-card dark:bg-dark-card p-8 rounded-2xl shadow-2xl glass-card w-full max-w-md text-center">
-                <h2 class="text-2xl font-extrabold font-heading text-text-primary dark:text-dark-text-primary mb-2">Cancellation Reason</h2>
-                <div class="glowing-line mt-2 mb-6 mx-auto"></div>
-                <p id="modalReasonText" class="text-xl font-bold text-primary dark:text-dark-primary mb-8"></p>
-                <button id="closeReasonModalBtn" class="w-full bg-secondary dark:bg-dark-secondary hover:bg-secondary-hover dark:hover:bg-dark-secondary-hover text-white dark:text-dark-background font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:-translate-y-1 active:translate-y-0">
-                    Close
+        <header class="relative flex flex-col justify-center items-center mb-8 sm:mb-12 animate-fadeInUp" style="animation-delay: 100ms;">
+            <div class="logo-glow sm:absolute sm:top-0 sm:left-0 mb-4 sm:mb-0">
+                <img src="https://i.ibb.co/TxmWmdRd/image.png" alt="Primary Logo" class="h-16 w-16">
+            </div>
+            <div class="text-center">
+                <h1 class="text-3xl sm:text-4xl font-extrabold font-heading text-text-primary dark:text-dark-text-primary tracking-tight">
+                    Late Owner Process
+                </h1>
+                <div class="glowing-line mt-3 mx-auto"></div>
+            </div>
+            <button id="theme-toggle" class="absolute top-0 right-0 p-2 rounded-full text-text-secondary dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-dark-primary transition-transform duration-300">
+                <svg id="theme-toggle-light-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <svg id="theme-toggle-dark-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+        </header>
+
+        <main class="bg-card dark:bg-dark-card p-6 sm:p-10 rounded-2xl shadow-2xl glass-card animate-fadeInUp" style="animation-delay: 200ms;">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 pb-8 border-b border-border dark:border-dark-border">
+                <div>
+                    <label for="vertical" class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary mb-2">Business Vertical</label>
+                    <select id="vertical" class="w-full p-3 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-lg shadow-sm focus:ring-primary dark:focus:ring-dark-primary form-input">
+                        <option>NFV</option> <option>Restaurant</option> <option>Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="currentTime" class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary mb-2">Current Time</label>
+                    <input type="text" id="currentTime" placeholder="0:00 AM/PM" class="form-input w-full p-3 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-lg shadow-sm focus:ring-primary dark:focus:ring-dark-primary time-input">
+                </div>
+                <!-- Scheduled Time container - visibility is toggled via JS -->
+                <div id="scheduledTimeContainer" class="hidden">
+                    <label for="scheduledTime" class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary mb-2">Scheduled Time <span class="font-normal text-primary dark:text-dark-primary">(NFV only)</span></label>
+                    <input type="text" id="scheduledTime" placeholder="0:00 AM/PM" class="form-input w-full p-3 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-lg shadow-sm focus:ring-primary dark:focus:ring-dark-primary time-input">
+                </div>
+            </div>
+
+            <div id="ridersContainer" class="mb-6">
+                <h2 class="text-xl font-bold font-heading text-text-primary dark:text-dark-text-primary mb-4">Rider Timestamps</h2>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 mt-10">
+                <button id="addRiderBtn" class="w-full sm:w-auto flex-grow flex items-center justify-center gap-2 bg-secondary dark:bg-dark-secondary hover:bg-secondary-hover dark:hover:bg-dark-secondary-hover text-white dark:text-dark-background font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:-translate-y-1 active:translate-y-0">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                    Add Rider
+                </button>
+                <button id="calculateBtn" class="w-full sm:w-auto flex-grow flex items-center justify-center gap-2 bg-primary dark:bg-dark-primary hover:bg-primary-hover dark:hover:bg-dark-primary-hover text-white font-bold py-3 px-6 rounded-lg shadow-lg btn-glow transition-transform transform hover:-translate-y-1 active:translate-y-0">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M4 2a1 1 0 00-1 1v1H2a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H5V3a1 1 0 00-1-1zM2 8v8h16V8H2z"></path></svg>
+                    Analyze Reason
                 </button>
             </div>
+
+            <div id="result" class="mt-12"></div>
+        </main>
+
+        <footer class="flex flex-col sm:flex-row items-center justify-between mt-10 text-center animate-fadeInUp" style="animation-delay: 300ms;">
+            <div class="logo-glow">
+                <img src="https://i.ibb.co/WvcTtbST/image.png" alt="Secondary Logo" class="h-10">
+            </div>
+            <div class="font-handwriting text-xl text-text-secondary dark:text-dark-text-secondary mt-4 sm:mt-0">
+                <p>made with LOVE</p>
+                <p>BY Omar Mohamed and Adham Mohamed</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Hidden Rider Template -->
+    <div id="riderTemplate" class="hidden">
+        <div class="rider-card rider p-5 mb-4 bg-background dark:bg-dark-background border-2 border-border dark:border-dark-border rounded-xl relative animate-fadeInUp transition-all duration-300 hover:border-primary dark:hover:border-dark-primary hover:shadow-lg hover:-translate-y-1">
+            <button class="remove-rider-btn absolute -top-3 -right-3 w-7 h-7 flex items-center justify-center bg-red-500 text-white rounded-full font-bold text-lg hover:bg-red-600 transform hover:scale-110 transition-transform" title="Remove Rider">&times;</button>
+            <h3 class="font-bold font-heading text-lg mb-4 text-primary dark:text-dark-primary">Rider</h3>
+            <div class="rider-fields grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Queued Time <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md queued"></label></div>
+                <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Accepted Time <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md accepted"></label></div>
+                <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Committed Pickup <input type="text" placeholder="00:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md committed"></label></div>
+                <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Near Pickup <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md nearpickup"></label></div>
+                <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Picked Up <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md pickedup"></label></div>
+                <div><label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Est. Dropoff <input type="text" placeholder="00:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md dropoff"></label></div>
+            </div>
         </div>
+    </div>
+    
+    <!-- Cancellation Reason Modal -->
+    <div id="reasonModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+        <div class="modal-content bg-card dark:bg-dark-card p-8 rounded-2xl shadow-2xl glass-card w-full max-w-md text-center">
+            <h2 class="text-2xl font-extrabold font-heading text-text-primary dark:text-dark-text-primary mb-2">Cancellation Reason</h2>
+            <div class="glowing-line mt-2 mb-6 mx-auto"></div>
+            <p id="modalReasonText" class="text-xl font-bold text-primary dark:text-dark-primary mb-8"></p>
+            <button id="closeReasonModalBtn" class="w-full bg-secondary dark:bg-dark-secondary hover:bg-secondary-hover dark:hover:bg-dark-secondary-hover text-white dark:text-dark-background font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:-translate-y-1 active:translate-y-0">
+                Close
+            </button>
+        </div>
+    </div>
 
 
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                // --- 3D BACKGROUND LOGIC (UNCHANGED) ---
-                const scene = new THREE.Scene();
-                const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-                const renderer = new THREE.WebGLRenderer({
-                    canvas: document.querySelector('#bg-canvas'),
-                    alpha: true
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- 3D BACKGROUND LOGIC ---
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({
+                canvas: document.querySelector('#bg-canvas'),
+                alpha: true
+            });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.position.setZ(30);
+            const shapes = [];
+            function createShapes() {
+                shapes.forEach(s => scene.remove(s));
+                shapes.length = 0;
+                const isDark = document.documentElement.classList.contains('dark');
+                const color = isDark ? 0x7F7AFF : 0x5E56F8;
+                const material = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
+                const geometries = [ new THREE.BoxGeometry(5, 5, 5), new THREE.TetrahedronGeometry(5), new THREE.OctahedronGeometry(5), new THREE.IcosahedronGeometry(5) ];
+                for (let i = 0; i < 50; i++) {
+                    const geometry = geometries[Math.floor(Math.random() * geometries.length)];
+                    const shape = new THREE.Mesh(geometry, material);
+                    const [x, y, z] = Array(3).fill().map(() => THREE.MathUtils.randFloatSpread(100));
+                    shape.position.set(x, y, z);
+                    const [rx, ry, rz] = Array(3).fill().map(() => Math.random() * 0.01 - 0.005);
+                    shape.userData.rotation = { x: rx, y: ry, z: rz };
+                    shapes.push(shape);
+                    scene.add(shape);
+                }
+            }
+            function animate() {
+                requestAnimationFrame(animate);
+                shapes.forEach(shape => {
+                    shape.rotation.x += shape.userData.rotation.x;
+                    shape.rotation.y += shape.userData.rotation.y;
                 });
-                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.render(scene, camera);
+            }
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                camera.position.setZ(30);
-                const shapes = [];
-                function createShapes() {
-                    shapes.forEach(s => scene.remove(s));
-                    shapes.length = 0;
-                    const isDark = document.documentElement.classList.contains('dark');
-                    const color = isDark ? 0x7F7AFF : 0x5E56F8;
-                    const material = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
-                    const geometries = [ new THREE.BoxGeometry(5, 5, 5), new THREE.TetrahedronGeometry(5), new THREE.OctahedronGeometry(5), new THREE.IcosahedronGeometry(5) ];
-                    for (let i = 0; i < 50; i++) {
-                        const geometry = geometries[Math.floor(Math.random() * geometries.length)];
-                        const shape = new THREE.Mesh(geometry, material);
-                        const [x, y, z] = Array(3).fill().map(() => THREE.MathUtils.randFloatSpread(100));
-                        shape.position.set(x, y, z);
-                        const [rx, ry, rz] = Array(3).fill().map(() => Math.random() * 0.01 - 0.005);
-                        shape.userData.rotation = { x: rx, y: ry, z: rz };
-                        shapes.push(shape);
-                        scene.add(shape);
-                    }
+            });
+            createShapes();
+            animate();
+
+            // --- THEME TOGGLE LOGIC ---
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const lightIcon = document.getElementById('theme-toggle-light-icon');
+            const darkIcon = document.getElementById('theme-toggle-dark-icon');
+            const applyTheme = (theme) => {
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    lightIcon.classList.remove('hidden');
+                    darkIcon.classList.add('hidden');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    lightIcon.classList.add('hidden');
+                    darkIcon.classList.remove('hidden');
                 }
-                function animate() {
-                    requestAnimationFrame(animate);
-                    shapes.forEach(shape => {
-                        shape.rotation.x += shape.userData.rotation.x;
-                        shape.rotation.y += shape.userData.rotation.y;
-                    });
-                    renderer.render(scene, camera);
-                }
-                window.addEventListener('resize', () => {
-                    camera.aspect = window.innerWidth / window.innerHeight;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(window.innerWidth, window.innerHeight);
-                });
                 createShapes();
-                animate();
+            };
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const currentTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+            applyTheme(currentTheme);
+            themeToggleBtn.addEventListener('click', () => {
+                const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+                themeToggleBtn.style.transform = `rotate(${newTheme === 'dark' ? 180 : 0}deg)`;
+            });
 
-                // --- THEME TOGGLE LOGIC (UNCHANGED) ---
-                const themeToggleBtn = document.getElementById('theme-toggle');
-                const lightIcon = document.getElementById('theme-toggle-light-icon');
-                const darkIcon = document.getElementById('theme-toggle-dark-icon');
-                const applyTheme = (theme) => {
-                    if (theme === 'dark') {
-                        document.documentElement.classList.add('dark');
-                        lightIcon.classList.remove('hidden');
-                        darkIcon.classList.add('hidden');
-                    } else {
-                        document.documentElement.classList.remove('dark');
-                        lightIcon.classList.add('hidden');
-                        darkIcon.classList.remove('hidden');
-                    }
-                    createShapes();
+            // --- APPLICATION LOGIC ---
+            const addRiderBtn = document.getElementById('addRiderBtn');
+            const calculateBtn = document.getElementById('calculateBtn');
+            const ridersContainer = document.getElementById('ridersContainer');
+            const riderTemplate = document.getElementById('riderTemplate');
+            const resultDiv = document.getElementById('result');
+            const reasonModal = document.getElementById('reasonModal');
+            const modalReasonText = document.getElementById('modalReasonText');
+            const closeReasonModalBtn = document.getElementById('closeReasonModalBtn');
+            const verticalSelect = document.getElementById('vertical');
+            const scheduledTimeContainer = document.getElementById('scheduledTimeContainer');
+
+            closeReasonModalBtn.addEventListener('click', () => reasonModal.classList.add('hidden'));
+            
+            function diffMinutes(startTime, endTime) {
+                if (!startTime || !endTime) return 0;
+                const parseTime = (t) => {
+                    const [hm, period] = t.split(' ');
+                    if (!hm || !period) return null;
+                    const [h, m] = hm.split(':').map(Number);
+                    if (isNaN(h) || isNaN(m)) return null;
+                    let hour = h;
+                    if (period.toUpperCase() === 'PM' && h !== 12) hour += 12;
+                    if (period.toUpperCase() === 'AM' && h === 12) hour = 0;
+                    return hour * 60 + m;
                 };
-                const savedTheme = localStorage.getItem('theme');
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                const currentTheme = savedTheme || (prefersDark ? 'dark' : 'light');
-                applyTheme(currentTheme);
-                themeToggleBtn.addEventListener('click', () => {
-                    const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
-                    localStorage.setItem('theme', newTheme);
-                    applyTheme(newTheme);
-                    themeToggleBtn.style.transform = `rotate(${newTheme === 'dark' ? 180 : 0}deg)`;
-                });
-
-                // --- APPLICATION LOGIC (UPDATED WITH NEW LOGIC) ---
-                const addRiderBtn = document.getElementById('addRiderBtn');
-                const calculateBtn = document.getElementById('calculateBtn');
-                const ridersContainer = document.getElementById('ridersContainer');
-                const riderTemplate = document.getElementById('riderTemplate');
-                const resultDiv = document.getElementById('result');
-                const reasonModal = document.getElementById('reasonModal');
-                const modalReasonText = document.getElementById('modalReasonText');
-                const closeReasonModalBtn = document.getElementById('closeReasonModalBtn');
-                const verticalSelect = document.getElementById('vertical');
-
-                closeReasonModalBtn.addEventListener('click', () => reasonModal.classList.add('hidden'));
-                
-                function diffMinutes(startTime, endTime) {
-                    const today = new Date();
-                    if (!startTime || !endTime) return 0;
-                    const [startHourMin, startPeriod] = startTime.split(' ');
-                    const [endHourMin, endPeriod] = endTime.split(' ');
-                    if (!startHourMin || !startPeriod || !endHourMin || !endPeriod) return 0;
-                    let [startHour, startMin] = startHourMin.split(':').map(Number);
-                    let [endHour, endMin] = endHourMin.split(':').map(Number);
-                    if (isNaN(startHour) || isNaN(startMin) || isNaN(endHour) || isNaN(endMin)) return 0;
-                    if (startPeriod.toUpperCase() === 'PM' && startHour !== 12) startHour += 12;
-                    if (startPeriod.toUpperCase() === 'AM' && startHour === 12) startHour = 0;
-                    if (endPeriod.toUpperCase() === 'PM' && endHour !== 12) endHour += 12;
-                    if (endPeriod.toUpperCase() === 'AM' && endHour === 12) endHour = 0;
-                    const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), startHour, startMin);
-                    const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), endHour, endMin);
-                    return Math.floor((endDate - startDate) / 60000);
-                }
-                
-                // --- VALIDATION (RESTORED) ---
-                function validateAllInputs() {
-                    let allValid = true;
-                    document.querySelectorAll('.time-input').forEach(input => {
-                        if (input.value.trim() !== '') {
-                            const timeParts = input.value.split(' ');
-                            if (timeParts.length !== 2 || !/^\d{1,2}:\d{2}$/.test(timeParts[0]) || !/^(AM|PM)$/i.test(timeParts[1])) {
-                                input.classList.add('invalid');
-                                allValid = false;
-                            } else {
-                                input.classList.remove('invalid');
-                            }
+                const start = parseTime(startTime);
+                const end = parseTime(endTime);
+                if (start === null || end === null) return 0;
+                return end - start;
+            }
+            
+            function validateAllInputs() {
+                let allValid = true;
+                document.querySelectorAll('.time-input').forEach(input => {
+                    if (input.offsetParent !== null && input.value.trim() !== '') { // Check if visible
+                        const timeParts = input.value.split(' ');
+                        if (timeParts.length !== 2 || !/^\d{1,2}:\d{2}$/.test(timeParts[0]) || !/^(AM|PM)$/i.test(timeParts[1])) {
+                            input.classList.add('invalid');
+                            allValid = false;
                         } else {
                             input.classList.remove('invalid');
                         }
-                    });
-                    return allValid;
-                }
+                    } else {
+                        input.classList.remove('invalid');
+                    }
+                });
+                return allValid;
+            }
 
-                const validateSingleInput = (e) => {
-                    if (e.target.value.trim() !== '') {
-                        const timeParts = e.target.value.split(' ');
-                        if (timeParts.length !== 2 || !/^\d{1,2}:\d{2}$/.test(timeParts[0]) || !/^(AM|PM)$/i.test(timeParts[1])) {
-                            e.target.classList.add('invalid');
-                        } else {
-                            e.target.classList.remove('invalid');
-                        }
+            const validateSingleInput = (e) => {
+                if (e.target.value.trim() !== '') {
+                    const timeParts = e.target.value.split(' ');
+                    if (timeParts.length !== 2 || !/^\d{1,2}:\d{2}$/.test(timeParts[0]) || !/^(AM|PM)$/i.test(timeParts[1])) {
+                        e.target.classList.add('invalid');
                     } else {
                         e.target.classList.remove('invalid');
                     }
+                } else {
+                    e.target.classList.remove('invalid');
                 }
+            }
 
-                const addRider = () => {
-                    const newRiderNode = riderTemplate.firstElementChild.cloneNode(true);
-                    const riderCount = ridersContainer.querySelectorAll('.rider-card').length + 1;
-                    newRiderNode.querySelector('h3').textContent = `Rider ${riderCount}`;
+            const addRider = () => {
+                const newRiderNode = riderTemplate.firstElementChild.cloneNode(true);
+                const riderCount = ridersContainer.querySelectorAll('.rider-card').length + 1;
+                newRiderNode.querySelector('h3').textContent = `Rider ${riderCount}`;
 
-                    const vertical = verticalSelect.value;
-                    if (vertical === "NFV" && riderCount === 1) {
-                        const scheduledField = document.createElement('div');
-                        scheduledField.innerHTML = `<label class="block text-sm font-bold text-text-secondary dark:text-dark-text-secondary">Scheduled Time <input type="text" placeholder="0:00 AM/PM" class="time-input form-input w-full mt-1 p-2 bg-card dark:bg-dark-card border-2 border-border dark:border-dark-border rounded-md scheduled"></label>`;
-                        const fieldsContainer = newRiderNode.querySelector('.rider-fields');
-                        fieldsContainer.insertBefore(scheduledField, fieldsContainer.firstChild);
-                    }
-
-                    newRiderNode.querySelector('.remove-rider-btn').addEventListener('click', () => {
-                        newRiderNode.remove();
-                        ridersContainer.querySelectorAll('.rider-card').forEach((card, index) => {
-                            card.querySelector('h3').textContent = `Rider ${index + 1}`;
-                        });
+                newRiderNode.querySelector('.remove-rider-btn').addEventListener('click', () => {
+                    newRiderNode.remove();
+                    ridersContainer.querySelectorAll('.rider-card').forEach((card, index) => {
+                        card.querySelector('h3').textContent = `Rider ${index + 1}`;
                     });
-                    
-                    newRiderNode.querySelectorAll('.time-input').forEach(input => {
-                        input.addEventListener('input', validateSingleInput);
-                    });
-                    ridersContainer.appendChild(newRiderNode);
-                };
-
-                addRider(); 
-                document.querySelectorAll('.time-input').forEach(input => {
+                });
+                
+                newRiderNode.querySelectorAll('.time-input').forEach(input => {
                     input.addEventListener('input', validateSingleInput);
                 });
-                addRiderBtn.addEventListener('click', addRider);
-                
-                verticalSelect.addEventListener('change', () => {
-                    ridersContainer.innerHTML = `<h2 class="text-xl font-bold font-heading text-text-primary dark:text-dark-text-primary mb-4">Rider Timestamps</h2>`;
-                    addRider();
-                });
-                
-                calculateBtn.addEventListener("click", () => {
-                    if (!validateAllInputs()) {
-                        resultDiv.innerHTML = `<div class="p-4 text-red-700 bg-red-100 border-l-4 border-red-500 rounded-r-lg animate-fadeInUp"><p class="font-bold">Validation Error</p><p>Please correct the highlighted time formats (e.g., 5:30 PM).</p></div>`;
-                        return;
-                    }
+                ridersContainer.appendChild(newRiderNode);
+            };
 
-                    const vertical = document.getElementById("vertical").value;
-                    const riders = document.querySelectorAll(".rider-card");
-                    const currentTimeInput = document.getElementById("currentTime").value;
-                    let groupedDelays = { "Dispatching Delay": 0, "Rider Delay": 0, "Preparation Delay": 0 };
-                    let timelineHTML = "<h5>Timeline:</h5>";
-                    let firstRiderIssue = false;
+            const handleVerticalChange = () => {
+                if (verticalSelect.value === 'NFV') {
+                    scheduledTimeContainer.classList.remove('hidden');
+                } else {
+                    scheduledTimeContainer.classList.add('hidden');
+                }
+                // Reset riders when vertical changes
+                ridersContainer.innerHTML = `<h2 class="text-xl font-bold font-heading text-text-primary dark:text-dark-text-primary mb-4">Rider Timestamps</h2>`;
+                addRider();
+            };
 
-                    riders.forEach((rider, index) => {
-                        const queued = rider.querySelector(".queued")?.value;
-                        const accepted = rider.querySelector(".accepted")?.value;
-                        const committed = rider.querySelector(".committed")?.value;
-                        const nearpickup = rider.querySelector(".nearpickup")?.value;
-                        const pickedup = rider.querySelector(".pickedup")?.value;
-                        const dropoff = rider.querySelector(".dropoff")?.value;
-                        let scheduled = vertical === "NFV" && index === 0 ? rider.querySelector(".scheduled")?.value : null;
-
-                        timelineHTML += `<div class="bg-background dark:bg-dark-background border-l-4 border-primary dark:border-dark-primary rounded-r-lg p-4 mb-3 animate-fadeInUp"><b>Rider ${index + 1}:</b><br>`;
-                        if (scheduled) timelineHTML += `Scheduled: ${scheduled} | `;
-                        if (queued) timelineHTML += `Queued: ${queued} | `;
-                        if (accepted) timelineHTML += `Accepted: ${accepted} | `;
-                        if (committed) timelineHTML += `Committed Pickup: ${committed} | `;
-                        if (nearpickup) timelineHTML += `Near Pickup: ${nearpickup} | `;
-                        if (pickedup) timelineHTML += `Picked Up: ${pickedup} | `;
-                        if (dropoff) timelineHTML += `Est. Dropoff Departure: ${dropoff} | `;
-
-                        // Dispatching Delay
-                        if (queued && accepted) {
-                            let dispatchTime = diffMinutes(queued, accepted);
-                            groupedDelays["Dispatching Delay"] += dispatchTime;
-                            if (vertical === "NFV" && scheduled) {
-                                let prepTime = diffMinutes(scheduled, queued);
-                                if (prepTime > 0) groupedDelays["Preparation Delay"] += prepTime;
-                            }
-                        }
-
-                        // Preparation & Rider Delay
-                        let riderDelay = 0, prepDelay = 0;
-                        if (committed) {
-                            if (nearpickup) {
-                                let delta = diffMinutes(committed, nearpickup);
-                                if (delta > 0) {
-                                    riderDelay = delta; // Rider arrived late → Rider Delay
-                                    if (pickedup) {
-                                        prepDelay = diffMinutes(nearpickup, pickedup); // Prep delay is after rider arrives
-                                    }
-                                } else {
-                                    // Rider arrived early or on time → Preparation Delay is from committed time
-                                    if (pickedup) {
-                                        prepDelay = diffMinutes(committed, pickedup);
-                                    } else if (currentTimeInput) {
-                                        prepDelay = diffMinutes(committed, currentTimeInput);
-                                    }
-                                }
-                            } else if (pickedup) {
-                                prepDelay = diffMinutes(committed, pickedup);
-                            } else if (!pickedup && currentTimeInput) {
-                                prepDelay = diffMinutes(committed, currentTimeInput);
-                            }
-                        }
-
-                        // Rider ongoing delay from Picked Up → Current Time
-                        if (pickedup && currentTimeInput) {
-                            let ongoingDelay = diffMinutes(pickedup, currentTimeInput);
-                            if (ongoingDelay > 0) {
-                                riderDelay += ongoingDelay;
-                            }
-                        }
-
-                        groupedDelays["Rider Delay"] += riderDelay;
-                        groupedDelays["Preparation Delay"] += prepDelay;
-
-                        if (riderDelay > 0) timelineHTML += `<span style="color:red;">Rider Delay: ${riderDelay} mins</span> | `;
-                        if (prepDelay > 0) timelineHTML += `<span style="color:orange;">Preparation Delay: ${prepDelay} mins</span> | `;
-
-                        // Driving Time
-                        if (dropoff && pickedup) {
-                            let driving = diffMinutes(pickedup, dropoff);
-                            if (driving >= 0) timelineHTML += `<span>Driving Time: ${driving} mins</span> | `;
-                        }
-
-                        // Extra Rider Delay between riders
-                        if (riders.length > 1 && index === 0) {
-                            const nextRider = riders[1];
-                            const nextAssignedTime = nextRider.querySelector(".queued")?.value || nextRider.querySelector(".accepted")?.value;
-                            const lastTimeFirstRider = pickedup || nearpickup || committed || accepted || queued;
-                            if (lastTimeFirstRider && nextAssignedTime) {
-                                let extraDelay = diffMinutes(lastTimeFirstRider, nextAssignedTime);
-                                if (extraDelay > 0) {
-                                    groupedDelays["Rider Delay"] += extraDelay;
-                                    timelineHTML += `<span style="color:red;">Extra Rider Delay before second rider: ${extraDelay} mins</span> | `;
-                                }
-                            }
-                        }
-
-                        if (index === 0 && ((accepted && !pickedup) || (queued && !accepted))) {
-                            firstRiderIssue = true;
-                            timelineHTML += `<span style="color:red;"><b>Issue detected with Rider 1</b></span> | `;
-                        }
-
-                        timelineHTML += `</div>`;
-                    });
-
-                    const delayMapping = { "Dispatching Delay": "Lack of Delivery Men", "Rider Delay": "Late Delivery", "Preparation Delay": "Preparation Delay" };
-
-                    let biggestDelayType = "";
-                    let biggestDelayValue = 0;
-                    Object.keys(groupedDelays).forEach(type => {
-                        if (groupedDelays[type] > biggestDelayValue) {
-                            biggestDelayValue = groupedDelays[type];
-                            biggestDelayType = type;
-                        }
-                    });
-
-                    let resultHTML = `<div class="border-t-2 border-border dark:border-dark-border pt-8 mt-8 animate-fadeInUp">${timelineHTML}</div>`;
-                    
-                    let summaryHTML = `<div class="mt-6 p-6 bg-background dark:bg-dark-background rounded-xl animate-fadeInUp">
-                                        <h5 class="text-xl font-bold font-heading mb-3 text-text-primary dark:text-dark-text-primary">Summary:</h5>`;
-
-                    Object.keys(groupedDelays).forEach(type => {
-                        if (groupedDelays[type] > 0) {
-                            summaryHTML += `<p class="text-text-secondary dark:text-dark-text-secondary"><b>${delayMapping[type]}:</b> ${groupedDelays[type]} mins</p>`;
-                        }
-                    });
-
-                    // Determine cancellation reason
-                    let cancellationReason = "";
-                    if (riders.length > 1) {
-                        if (firstRiderIssue) {
-                            cancellationReason = "Order picked up/delivered by another rider";
-                        } else if (biggestDelayType === "Rider Delay") {
-                            cancellationReason = "Late Delivery";
-                        } else {
-                            cancellationReason = delayMapping[biggestDelayType] || "Preparation Delay";
-                        }
-                    } else {
-                        cancellationReason = delayMapping[biggestDelayType] || "Preparation Delay";
-                    }
-                    
-                    summaryHTML += `<p class="font-heading font-extrabold mt-4 text-xl"><strong class="text-red-500 dark:text-red-400">Cancellation Reason:</strong> <span class="text-primary dark:text-dark-primary">${cancellationReason}</span></p></div>`;
-                    
-                    resultDiv.innerHTML = resultHTML + summaryHTML;
-                    
-                    // Show modal
-                    modalReasonText.textContent = cancellationReason;
-                    reasonModal.classList.remove('hidden');
-                });
+            addRider(); // Add the first rider on load
+            document.querySelectorAll('.time-input').forEach(input => {
+                input.addEventListener('input', validateSingleInput);
             });
-        </script>
-    </body>
-    </html>
+            addRiderBtn.addEventListener('click', addRider);
+            verticalSelect.addEventListener('change', handleVerticalChange);
+            handleVerticalChange(); // Initial check on page load
+            
+            calculateBtn.addEventListener("click", () => {
+                if (!validateAllInputs()) {
+                    resultDiv.innerHTML = `<div class="p-4 text-red-700 bg-red-100 border-l-4 border-red-500 rounded-r-lg animate-fadeInUp"><p class="font-bold">Validation Error</p><p>Please correct the highlighted time formats (e.g., 5:30 PM).</p></div>`;
+                    return;
+                }
+
+                const vertical = document.getElementById("vertical").value;
+                const riders = document.querySelectorAll(".rider-card");
+                const currentTimeInput = document.getElementById("currentTime").value;
+                const scheduledTimeInput = document.getElementById("scheduledTime").value;
+                let groupedDelays = { "Dispatching Delay": 0, "Rider Delay": 0, "Preparation Delay": 0 };
+                let riderDelays = [];
+                let timelineHTML = "";
+                let firstRiderIssue = false;
+
+                riders.forEach((rider, index) => {
+                    const queued = rider.querySelector(".queued")?.value;
+                    const accepted = rider.querySelector(".accepted")?.value;
+                    const committed = rider.querySelector(".committed")?.value;
+                    const nearpickup = rider.querySelector(".nearpickup")?.value;
+                    const pickedup = rider.querySelector(".pickedup")?.value;
+                    const dropoff = rider.querySelector(".dropoff")?.value;
+                    let scheduled = vertical === "NFV" && index === 0 ? scheduledTimeInput : null;
+                    
+                    timelineHTML += `<div class="bg-background dark:bg-dark-background border-l-4 border-primary dark:border-dark-primary rounded-r-lg p-4 mb-3 animate-fadeInUp"><b>Rider ${index + 1}:</b><br><div class="text-xs break-words">`;
+                    if (scheduled) timelineHTML += `Scheduled: ${scheduled} | `;
+                    if (queued) timelineHTML += `Queued: ${queued} | `;
+                    if (accepted) timelineHTML += `Accepted: ${accepted} | `;
+                    if (committed) timelineHTML += `Committed: ${committed} | `;
+                    if (nearpickup) timelineHTML += `Near Pickup: ${nearpickup} | `;
+                    if (pickedup) timelineHTML += `Picked Up: ${pickedup} | `;
+                    if (dropoff) timelineHTML += `Est. Dropoff: ${dropoff} | `;
+                    
+                    if (queued && accepted) {
+                        groupedDelays["Dispatching Delay"] += diffMinutes(queued, accepted);
+                        if (vertical === "NFV" && scheduled) { let p = diffMinutes(scheduled, queued); if (p > 0) groupedDelays["Preparation Delay"] += p; }
+                    }
+
+                    let riderDelay = 0, prepDelay = 0;
+                    if (committed) {
+                        if (nearpickup) {
+                            let delta = diffMinutes(committed, nearpickup);
+                            if (delta > 0) {
+                                riderDelay = delta;
+                            } else {
+                                if (pickedup) prepDelay = diffMinutes(committed, pickedup);
+                                else if (currentTimeInput) prepDelay = diffMinutes(committed, currentTimeInput);
+                            }
+                        } else if (pickedup) {
+                            prepDelay = diffMinutes(committed, pickedup);
+                        } else if (!pickedup && currentTimeInput) {
+                            prepDelay = diffMinutes(committed, currentTimeInput);
+                        }
+                    }
+                    if (pickedup && currentTimeInput) {
+                        let ongoingDelay = diffMinutes(pickedup, currentTimeInput);
+                        if (ongoingDelay > 0) riderDelay += ongoingDelay;
+                    }
+                    if (riders.length > 1 && index === 0) {
+                        const nextRider = riders[1];
+                        const nextAssignedTime = nextRider.querySelector(".queued")?.value || nextRider.querySelector(".accepted")?.value;
+                        const lastTimeFirstRider = pickedup || nearpickup || committed || accepted || queued;
+                        if (lastTimeFirstRider && nextAssignedTime) {
+                            let extraDelay = diffMinutes(lastTimeFirstRider, nextAssignedTime);
+                            if (extraDelay > 0) {
+                                riderDelay += extraDelay;
+                                timelineHTML += `<br><span class="font-bold text-red-500">Extra Delay (before next): ${extraDelay} mins</span> | `;
+                            }
+                        }
+                    }
+                    
+                    riderDelays[index] = riderDelay;
+                    groupedDelays["Rider Delay"] += riderDelay;
+                    groupedDelays["Preparation Delay"] += prepDelay;
+
+                    if (riderDelay > 0) timelineHTML += `<br><span class="font-bold text-red-500">Rider Delay: ${riderDelay} mins</span> | `;
+                    if (prepDelay > 0) timelineHTML += `<span class="font-bold text-yellow-500">Prep Delay: ${prepDelay} mins</span> | `;
+                    
+                    if (index === 0 && ((accepted && !pickedup) || (queued && !accepted))) {
+                        firstRiderIssue = true;
+                    }
+                    timelineHTML += `</div></div>`;
+                });
+
+                const delayMapping = { "Dispatching Delay": "Lack of Delivery Men", "Rider Delay": "Late Delivery", "Preparation Delay": "Preparation Delay" };
+                let biggestDelayType = ""; let biggestDelayValue = -1;
+                Object.keys(groupedDelays).forEach(type => { if (groupedDelays[type] > biggestDelayValue) { biggestDelayValue = groupedDelays[type]; biggestDelayType = type; } });
+                
+                let summaryHTML = `<div class="mt-6 p-6 bg-background dark:bg-dark-background rounded-xl animate-fadeInUp">
+                                    <h5 class="text-xl font-bold font-heading mb-3 text-text-primary dark:text-dark-text-primary">Summary:</h5>`;
+                Object.keys(groupedDelays).forEach(type => {
+                    if (groupedDelays[type] > 0) {
+                        summaryHTML += `<p class="text-text-secondary dark:text-dark-text-secondary"><b>${delayMapping[type]}:</b> ${groupedDelays[type]} mins</p>`;
+                    }
+                });
+                summaryHTML += `</div>`;
+
+                let cancellationReason = "";
+                if (biggestDelayValue <= 0) cancellationReason = "No primary delay reason found.";
+                else if (riders.length > 1 && firstRiderIssue) {
+                    const rider2Delay = riderDelays[1] || 0;
+                    if (biggestDelayType === "Rider Delay" && rider2Delay > (groupedDelays["Rider Delay"] / 2)) cancellationReason = "Late Delivery";
+                    else cancellationReason = "Picked up by another rider";
+                } else cancellationReason = delayMapping[biggestDelayType] || "N/A";
+                
+                resultDiv.innerHTML = `<div class="border-t-2 border-border dark:border-dark-border pt-8 mt-8 animate-fadeInUp"><h5 class="text-xl font-bold font-heading mb-3 text-text-primary dark:text-dark-text-primary">Timeline:</h5>${timelineHTML}</div>` + summaryHTML;
+                
+                modalReasonText.textContent = cancellationReason;
+                reasonModal.classList.remove('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
